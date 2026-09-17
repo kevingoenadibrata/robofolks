@@ -2,11 +2,25 @@
   "name": "bot-avatar",
   "version": "0.1.0",
   "description": "Seeded, animated pixel-robot avatars drawn as SVG or onto a canvas",
-  "main": "bot.js",
-  "browser": "bot.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./dom": {
+      "types": "./src/dom.d.ts",
+      "default": "./src/dom.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
-    "bot.js"
+    "src"
   ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:update": "UPDATE_SNAPSHOTS=1 node --test test/*.test.js"

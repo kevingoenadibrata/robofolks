@@ -1,11 +1,8 @@
-'use strict';
-
 /* bot-avatar: seeded pixel-robot avatars.
 
-   Load it with a <script> tag and it defines globals the page calls directly
-   (mountBot, botTraits, botSvg, ...). Required from a bundler or Node it
-   exports the same functions instead; the animation ticker only runs in a
-   browser.
+   This module is pure: seeds and traits in, frames and SVG strings out. It
+   touches no globals, so it runs in Node, workers and at build time. Mounting
+   robots into a page and animating them is in ./dom.js.
 
    Each agent gets a robot drawn on a 32x16 grid of "terminal pixels": one
    pixel is half a character cell, so it's twice as tall as it is wide, like
@@ -23,33 +20,34 @@
    in a 4-frame walk cycle (botWalkFrame), and painted onto a canvas for a
    sprite sheet (paintBotSheet).
 
-   Frames are drawn by one shared ticker. */
-const BOT_TICK_MS = 160;
-const BOT_W = 32;
-const BOT_H = 16;
+   Animations advance one tick every BOT_TICK_MS. */
+export const BOT_TICK_MS = 160;
+export const BOT_W = 32;
+export const BOT_H = 16;
 // [highlight, base, shade] -- lit from the top left.
-const BOT_BODIES = [
+export const BOT_BODIES = [
   ['#ffa95e', '#fe8019', '#af3a03'], ['#e9b0c0', '#d3869b', '#8f3f71'],
   ['#a9c6ba', '#83a598', '#076678'], ['#fbf1c7', '#d5c4a1', '#7c6f64'],
   ['#ff8474', '#fb4934', '#9d0006'], ['#dcde5c', '#b8bb26', '#79740e'],
   ['#928374', '#7c6f64', '#504945'],
 ];
-const BOT_BODY_NAMES = ['Orange', 'Pink', 'Blue', 'Cream', 'Red', 'Lime', 'Dark gray'];
+export const BOT_BODY_NAMES = ['Orange', 'Pink', 'Blue', 'Cream', 'Red', 'Lime', 'Dark gray'];
 // Every part a robot can be built from; the seed picks one of each.
-const BOT_PARTS = {
+export const BOT_PARTS = {
   build: ['walker', 'tank', 'ball'],
   antenna: ['mast', 'twin', 'dome'],
   ears: ['bolt', 'fin', 'none'],
   chest: ['lights', 'core', 'grille'],
 };
 // What to call each part option in the UI.
-const BOT_PART_NAMES = {
+export const BOT_PART_NAMES = {
   build: { walker: 'Walker', tank: 'Tank', ball: 'Ball' },
   antenna: { mast: 'Mast', twin: 'Twin stalks', dome: 'Dome light' },
   ears: { bolt: 'Bolt lights', fin: 'Fins', none: 'No ears' },
   chest: { lights: 'Three lights', core: 'Single light', grille: 'Grille' },
 };
-const BOT_VIEWS = ['front', 'back', 'left', 'right'];
+export const BOT_VIEWS = ['front', 'back', 'left', 'right'];
+export const BOT_STATES = ['active', 'needs', 'waiting'];
 // Pixel glyphs that float beside a robot, drawn in the same tall pixels as the
 // robot and snapped to its grid ('#' = pixel).
 const BOT_GLYPHS = {
@@ -57,13 +55,9 @@ const BOT_GLYPHS = {
   z: ['####', '..#.', '.#..', '####'],
   Z: ['#####', '..##.', '.##..', '#####'],
 };
-const BOT_WALK_FRAMES = 4;
+export const BOT_WALK_FRAMES = 4;
 const LIGHT = { active: '#8ec07c', needs: '#fabd2f', waiting: '#665c54' };
 const LIGHT_OFF = '#3c3836';
-const inBrowser = typeof window !== 'undefined';
-const reduceMotion = inBrowser && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const bots = new Set();
-let botTick = 0;
 
 function seededRandom(str) {
   let h = 2166136261;
@@ -79,7 +73,7 @@ function seededRandom(str) {
 /** The robot for `seed` (a project path). `overrides` holds any parts picked
  *  by hand -- { body: 'Blue', build: 'tank', ... } -- which win over the
  *  seed's picks; values it doesn't recognize are ignored. */
-function botTraits(seed, overrides = null) {
+export function botTraits(seed, overrides = null) {
   const traits = seededTraits(seed);
   if (!overrides) return traits;
   const paint = BOT_BODY_NAMES.indexOf(overrides.body);
@@ -323,7 +317,7 @@ function botPieces(traits) {
 }
 
 /** Dashboard frame: facing you, animated by state. */
-function botFrame(traits, state, tick) {
+export function botFrame(traits, state, tick) {
   const t = tick + traits.phase;
   const p = botPieces(traits);
   p.head('front');
@@ -395,7 +389,7 @@ function botFrame(traits, state, tick) {
 /** Sprite frame: one step of the walk cycle, facing `view`
  *  ('front' | 'back' | 'left' | 'right'). Frames 0 and 2 are the two
  *  strides, 1 and 3 the passing poses between them. */
-function botWalkFrame(traits, view, frame) {
+export function botWalkFrame(traits, view, frame) {
   const f = ((frame % BOT_WALK_FRAMES) + BOT_WALK_FRAMES) % BOT_WALK_FRAMES;
   const p = botPieces(traits);
   const side = view === 'left' || view === 'right';
@@ -434,7 +428,7 @@ function botWalkFrame(traits, view, frame) {
   return { grid: p.g, dy, glyphs: [], light: f < 2 ? LIGHT.active : '#504945', lit: f % 3 };
 }
 
-function botColors(traits, state, light, lit) {
+export function botColors(traits, state, light, lit) {
   const on = state === 'needs' ? LIGHT.needs : LIGHT.active;
   const chest = (i) => (lit === 3 || lit === i ? on : LIGHT_OFF);
   return {
@@ -447,7 +441,7 @@ function botColors(traits, state, light, lit) {
 
 /** Walk a frame's grid as merged horizontal runs: fn(x, y, width, height, color),
  *  in grid units (a pixel is 1 wide, 2 tall). */
-function eachBotRect(frame, colors, fn) {
+export function eachBotRect(frame, colors, fn) {
   frame.grid.forEach((cells, y) => {
     for (let x = 0; x < cells.length; ) {
       const c = cells[x];
@@ -479,11 +473,11 @@ function frameSvg(traits, state, frame) {
   return `<svg viewBox="-2 -10 36 44" shape-rendering="crispEdges">${rects.join('')}${glyphs}</svg>`;
 }
 
-function botSvg(traits, state, tick) {
+export function botSvg(traits, state, tick) {
   return frameSvg(traits, state, botFrame(traits, state, tick));
 }
 
-function botWalkSvg(traits, view, frame) {
+export function botWalkSvg(traits, view, frame) {
   return frameSvg(traits, 'active', botWalkFrame(traits, view, frame));
 }
 
@@ -491,7 +485,7 @@ function botWalkSvg(traits, view, frame) {
  *  right), one column per walk frame. Each cell is 34 x 34 grid units (the
  *  32-wide robot plus a unit of room on each side for the walk bob), and one
  *  grid unit is `scale` canvas pixels. Transparent background. */
-function paintBotSheet(canvas, traits, scale = 4) {
+export function paintBotSheet(canvas, traits, scale = 4) {
   const cell = 34;
   canvas.width = BOT_WALK_FRAMES * cell * scale;
   canvas.height = BOT_VIEWS.length * cell * scale;
@@ -510,54 +504,4 @@ function paintBotSheet(canvas, traits, scale = 4) {
     }
   });
   return canvas;
-}
-
-function drawBot(bot) {
-  const tick = reduceMotion ? 0 : botTick;
-  bot.el.innerHTML = bot.view
-    ? botWalkSvg(bot.traits, bot.view, Math.floor(tick / 2))
-    : botSvg(bot.traits, bot.state, tick);
-}
-
-/** Draw a bot into `el` and keep it animating. `who` is a seed string, or a
- *  traits object to show a specific build. Pass `{ view }` to show it walking
- *  that way instead of animating a dashboard state. */
-function mountBot(el, who, state = 'waiting', { view = null } = {}) {
-  const traits = typeof who === 'string' ? botTraits(who) : { phase: 0, ...who };
-  const bot = { el, traits, state, view };
-  bots.add(bot);
-  drawBot(bot);
-  return bot;
-}
-
-function setBotState(bot, state) {
-  if (bot.state === state) return;
-  bot.state = state;
-  drawBot(bot);
-}
-
-const tickListeners = [];
-function onBotTick(fn) {
-  tickListeners.push(fn);
-}
-
-if (inBrowser && !reduceMotion) {
-  setInterval(() => {
-    botTick++;
-    for (const bot of bots) {
-      if (!bot.el.isConnected) { bots.delete(bot); continue; } // card or panel was re-rendered
-      drawBot(bot);
-    }
-    for (const fn of tickListeners) fn(botTick);
-  }, BOT_TICK_MS);
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    BOT_TICK_MS, BOT_W, BOT_H, BOT_BODIES, BOT_BODY_NAMES, BOT_PARTS, BOT_PART_NAMES,
-    BOT_VIEWS, BOT_WALK_FRAMES,
-    botTraits, botFrame, botWalkFrame, botColors, eachBotRect,
-    botSvg, botWalkSvg, paintBotSheet,
-    mountBot, setBotState, onBotTick,
-  };
 }

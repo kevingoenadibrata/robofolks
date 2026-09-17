@@ -20,15 +20,17 @@ producing the same robot.
 
 ## Phase 1: Core npm package
 
-- [ ] Convert `bot.js` to ES modules; ship ESM and CommonJS builds plus
-      TypeScript types.
-- [ ] Two entry points:
+- [x] Convert `bot.js` to ES modules with TypeScript types. ESM only, no
+      CommonJS build: every supported Node version can `require()` ESM, and
+      it keeps the package free of a build step.
+- [x] Two entry points:
   - `bot-avatar`: pure functions (`botTraits`, `botSvg`, `botWalkSvg`, part
     lists). Works in Node, at build time, on edge servers and in the browser.
-  - `bot-avatar/dom`: `mountBot`, `setBotState`, `onBotTick` and the ticker.
-- [ ] Drop the globals, or keep a small browser build so a plain `<script>`
-      tag still works.
-- [ ] Switch the agenthub dashboard to import the package, and remove the
+  - `bot-avatar/dom`: `mountBot`, `updateBot`, `setBotState`, `onBotTick` and
+    the shared clock, which now starts and stops on demand.
+- [x] Drop the globals. No separate browser build: pages use
+      `<script type="module">` with an import map, or a CDN.
+- [x] Switch the agenthub dashboard to import the package, and remove the
       relative-path lookup in its `server.js`.
 
 ## Phase 2: Animated SVG with no JavaScript

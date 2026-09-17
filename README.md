@@ -4,39 +4,75 @@ Seeded, animated pixel-robot avatars. Any string (a project path, a username)
 always produces the same robot: paint, build (walker, tank, ball), antenna,
 ears and chest panel. No dependencies.
 
-## Use
+## Install
 
-In a page, as a plain script (defines globals):
-
-```html
-<div id="me"></div>
-<script src="bot.js"></script>
-<script>
-  const bot = mountBot(document.getElementById('me'), 'kevingo', 'active');
-  setBotState(bot, 'needs'); // 'active' | 'needs' | 'waiting'
-</script>
+```sh
+npm install bot-avatar
 ```
 
-From a bundler or Node:
+ES modules with TypeScript types. CommonJS can `require()` it too, on
+Node 20.19+ or 22.12+.
+
+## Use
+
+Pure functions, anywhere (Node, workers, build time, the browser):
 
 ```js
-const { botTraits, botSvg } = require('bot-avatar');
+import { botTraits, botSvg } from 'bot-avatar';
+
 const svg = botSvg(botTraits('kevingo'), 'waiting', 0); // SVG string
+```
+
+Mounted in a page and animating:
+
+```js
+import { mountBot, setBotState } from 'bot-avatar/dom';
+
+const bot = mountBot(document.getElementById('me'), 'kevingo', 'active');
+setBotState(bot, 'needs'); // 'active' | 'needs' | 'waiting'
+```
+
+Without a bundler, point an import map at the two modules:
+
+```html
+<script type="importmap">
+  { "imports": { "bot-avatar": "/bot-avatar/index.js", "bot-avatar/dom": "/bot-avatar/dom.js" } }
+</script>
+<script type="module">
+  import { mountBot } from 'bot-avatar/dom';
+</script>
 ```
 
 ## API
 
-- `botTraits(seed, overrides?)` — the robot for `seed`; `overrides` like
-  `{ body: 'Blue', build: 'tank' }` win over the seed's picks.
-- `mountBot(el, seedOrTraits, state?, { view? })` — draw into `el` and keep
-  animating. Pass `view` (`front` | `back` | `left` | `right`) for a walk cycle.
-- `setBotState(bot, state)`, `onBotTick(fn)`
-- `botSvg(traits, state, tick)`, `botWalkSvg(traits, view, frame)` — SVG strings.
-- `paintBotSheet(canvas, traits, scale?)` — 4×4 walk-cycle sprite sheet.
-- `BOT_PARTS`, `BOT_PART_NAMES`, `BOT_BODY_NAMES` — every option, for building
-  an editor.
+### `bot-avatar`
 
-The animation ticker only runs in a browser, and not at all with
+- `botTraits(seed, overrides?)`: the robot for `seed`. `overrides` like
+  `{ body: 'Blue', build: 'tank' }` win over the seed's picks; unknown values
+  are ignored.
+- `botSvg(traits, state, tick)`: one animation frame as an SVG string.
+- `botWalkSvg(traits, view, frame)`: one walk-cycle frame (`front` | `back` |
+  `left` | `right`).
+- `paintBotSheet(canvas, traits, scale?)`: a 4×4 walk-cycle sprite sheet on
+  any canvas with a 2D context.
+- `botFrame`, `botWalkFrame`, `botColors`, `eachBotRect`: the raw pixel grid,
+  for drawing robots some other way.
+- `BOT_PARTS`, `BOT_PART_NAMES`, `BOT_BODY_NAMES`, `BOT_BODIES`, `BOT_STATES`,
+  `BOT_VIEWS`: every option, for building an editor.
+- `BOT_TICK_MS`: how long one animation tick lasts.
+
+### `bot-avatar/dom`
+
+- `mountBot(el, seedOrTraits, state?, { view? })`: draw into `el` and keep
+  animating. Pass `view` to show a walk cycle instead of a state.
+- `updateBot(bot, { who?, state?, view? })`: change a mounted robot and redraw.
+- `setBotState(bot, state)`, `unmountBot(bot)`
+- `onBotTick(fn)`: runs `fn(tick)` on the shared clock; returns an unsubscribe
+  function.
+- `currentBotTick()`, `prefersReducedMotion()`
+
+All robots share one clock. It runs only while something is mounted or
+listening, drops robots whose element has left the page, and holds still under
 `prefers-reduced-motion`.
 
 ## Stability
@@ -47,13 +83,13 @@ A seed always gets the same robot within a major version.
   different.
 - **Minor:** new parts, states or functions that leave existing robots alone.
   New parts must not shift the seed's random draws: add new draws at the end
-  of `seededTraits`, never in the middle.
+  of `seededTraits` in `src/index.js`, never in the middle.
 
 ## Tests
 
 ```sh
-npm test             # compare against test/snapshots.json
-npm run test:update  # regenerate after an intended change
+npm test             # snapshots plus the package entry points
+npm run test:update  # regenerate snapshots after an intended change
 ```
 
 The snapshots pin two things (see `test/cases.js`):

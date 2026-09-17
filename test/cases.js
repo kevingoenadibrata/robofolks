@@ -1,5 +1,3 @@
-'use strict';
-
 /* What the snapshot tests pin down, in two layers:
 
    seeds  -- which robot each seed picks (its traits). This is the public
@@ -9,10 +7,10 @@
              state and walk direction, independent of any seed. A change here
              is a redraw: check it's intended before updating. */
 
-const crypto = require('node:crypto');
-const bot = require('../bot.js');
+import crypto from 'node:crypto';
+import * as bot from '../src/index.js';
 
-const SEEDS = [
+export const SEEDS = [
   // Project paths, the way agenthub seeds its robots.
   ...['agenthub', 'cellar', 'alasmas', 'bggen', 'curator', 'firejack', 'huhwhut', 'kmbook', 'paragraf',
     'ticketscan', 'youtube', '100reasons', 'dotfiles', 'api', 'web', 'mobile', 'infra', 'docs', 'blog', 'scratch']
@@ -30,12 +28,11 @@ const SEEDS = [
 // look-around repeats every 36 ticks and the blink every 26 (lcm with the rest
 // is 468); dozing repeats every 208.
 const TICKS = 468;
-const STATES = ['active', 'needs', 'waiting'];
 
 const hash = (svgs) => crypto.createHash('sha256').update(svgs.join('\n')).digest('hex').slice(0, 16);
 
 /** A seed's traits with the paint as its name, so the snapshot reads. */
-function seedTraits(seed, overrides = null) {
+export function seedTraits(seed, overrides = null) {
   const { body, ...parts } = bot.botTraits(seed, overrides);
   return { body: bot.BOT_BODY_NAMES[bot.BOT_BODIES.indexOf(body)], ...parts };
 }
@@ -43,7 +40,7 @@ function seedTraits(seed, overrides = null) {
 /** One hash per animation state and per walk direction, each covering every frame. */
 function frameHashes(traits) {
   const out = {};
-  for (const state of STATES) {
+  for (const state of bot.BOT_STATES) {
     out[state] = hash(Array.from({ length: TICKS }, (_, t) => bot.botSvg(traits, state, t)));
   }
   for (const view of bot.BOT_VIEWS) {
@@ -67,7 +64,7 @@ function buildCases() {
 }
 
 /** Everything the snapshot file holds, freshly computed. */
-function computeSnapshots() {
+export function computeSnapshots() {
   return {
     seeds: SEEDS.map((seed) => ({ seed, traits: seedTraits(seed) })),
     builds: buildCases().map(({ name, parts }) => {
@@ -77,5 +74,3 @@ function computeSnapshots() {
     }),
   };
 }
-
-module.exports = { SEEDS, computeSnapshots, seedTraits };

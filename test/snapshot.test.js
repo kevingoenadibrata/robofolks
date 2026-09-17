@@ -1,16 +1,13 @@
-'use strict';
-
 /* Snapshot tests: see cases.js for what's pinned down and why.
    After an intended change, regenerate with `npm run test:update`. */
 
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const bot = require('../bot.js');
-const { SEEDS, computeSnapshots, seedTraits } = require('./cases.js');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as bot from '../src/index.js';
+import { SEEDS, computeSnapshots, seedTraits } from './cases.js';
 
-const FILE = path.join(__dirname, 'snapshots.json');
+const FILE = new URL('snapshots.json', import.meta.url);
 const actual = computeSnapshots();
 
 if (process.env.UPDATE_SNAPSHOTS) {
