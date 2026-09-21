@@ -356,12 +356,51 @@ folkAnimatedSvg(<span class="s">'ada'</span>, <span class="s">'needs'</span>);</
   seedInput.addEventListener('input', () => setSeed(seedInput.value));
   hero.seed = seedInput.value;
 
+  // Walking crosses the stage: out to one edge, turn, back again. The robot
+  // faces the way it's heading, so the turn is a real change of view.
+  const stage = document.querySelector('.stage');
+  const stillMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let walking = null;
+
+  function startWalking() {
+    hero.view = 'left';
+    if (stillMotion.matches) return; // it stays put and faces left
+    let heading = -1;
+    let x = 0;
+    let last = performance.now();
+    const step = (now) => {
+      const seconds = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const width = hero.getBoundingClientRect().width;
+      const edge = Math.max(0, (stage.clientWidth - width) / 2 - 16);
+      const pace = width * 0.6; // pixels a second, about a stride per walk cycle
+      x += heading * pace * seconds;
+      if (x <= -edge || x >= edge) {
+        x = Math.sign(x) * edge;
+        heading = -heading;
+        hero.view = heading < 0 ? 'left' : 'right';
+        showSpec();
+      }
+      hero.style.transform = `translateX(${Math.round(x)}px)`;
+      walking = requestAnimationFrame(step);
+    };
+    walking = requestAnimationFrame(step);
+  }
+
+  function stopWalking() {
+    if (walking !== null) cancelAnimationFrame(walking);
+    walking = null;
+    hero.style.transform = '';
+    hero.view = null;
+  }
+
   document.getElementById('modes').addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button) return;
     for (const other of event.currentTarget.children) other.setAttribute('aria-pressed', String(other === button));
-    hero.view = button.dataset.view ?? null;
-    if (button.dataset.state) hero.state = button.dataset.state;
+    stopWalking();
+    if (button.dataset.view) startWalking();
+    else hero.state = button.dataset.state;
     stageLabel.textContent = button.textContent;
     showSpec();
   });
