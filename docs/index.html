@@ -280,7 +280,7 @@
 <pre><span class="c">// registers &lt;robo-folk&gt;</span>
 import <span class="s">'robofolks/element'</span>;
 
-&lt;robo-folk seed=<span class="s">"ada"</span>
+&lt;robo-folk seed=<span class="s">"kevingo"</span>
   state=<span class="s">"active"</span>&gt;&lt;/robo-folk&gt;</pre>
         </div>
         <div class="card">
@@ -288,16 +288,16 @@ import <span class="s">'robofolks/element'</span>;
           <p>Renders the SVG itself, so server rendering needs no hydration.</p>
 <pre>import { RoboFolk } from <span class="s">'robofolks/react'</span>;
 
-&lt;RoboFolk seed=<span class="s">"ada"</span>
+&lt;RoboFolk seed=<span class="s">"kevingo"</span>
   state=<span class="s">"active"</span> size={48} /&gt;</pre>
         </div>
         <div class="card">
           <h3>A file on disk</h3>
           <p>An SVG that plays itself, a PNG, or a sprite sheet for a game engine.</p>
-<pre>npx robofolks svg ada \
-  --state active -o ada.svg
+<pre>npx robofolks svg kevingo \
+  --state active -o kevingo.svg
 
-npx robofolks sheet ada -o sheet.png</pre>
+npx robofolks sheet kevingo -o sheet.png</pre>
         </div>
         <div class="card">
           <h3>Anywhere else</h3>
@@ -305,7 +305,7 @@ npx robofolks sheet ada -o sheet.png</pre>
 <pre>import { folkTraits, folkAnimatedSvg }
   from <span class="s">'robofolks'</span>;
 
-folkAnimatedSvg(<span class="s">'ada'</span>, <span class="s">'needs'</span>);</pre>
+folkAnimatedSvg(<span class="s">'kevingo'</span>, <span class="s">'needs'</span>);</pre>
         </div>
       </div>
     </div>
@@ -408,7 +408,7 @@ folkAnimatedSvg(<span class="s">'ada'</span>, <span class="s">'needs'</span>);</
 
   // The roster: real-looking seeds, so the point lands.
   const SEEDS = [
-    'ada', 'grace', 'linus', 'margaret', 'octocat', 'kevingo',
+    'nova', 'grace', 'linus', 'margaret', 'octocat', 'kevingo',
     'you@example.com', '~/Projects/agenthub', 'deploy-bot', 'nightly-build',
     'main', 'feature/login', 'staging', 'prod', 'qa-runner', 'docs-site',
     'alex', 'sam', 'jordan', 'priya', 'kenji', 'noor', 'mateo', 'wren',
@@ -439,7 +439,7 @@ folkAnimatedSvg(<span class="s">'ada'</span>, <span class="s">'needs'</span>);</
     ['ball', 'core', 'Single light'],
   ].map(([build, chest, label]) => `
     <div>
-      <robo-folk seed="ada" build="${build}" chest="${chest}" state="active"></robo-folk>
+      <robo-folk seed="nova" build="${build}" chest="${chest}" state="active"></robo-folk>
       <b>${build}</b>
       <small>chest: ${label}</small>
     </div>`).join('');

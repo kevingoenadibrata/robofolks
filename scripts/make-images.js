@@ -28,7 +28,7 @@ fs.mkdirSync(DOCS, { recursive: true });
 
 // A row of robots: the three builds, working, idle and needing you.
 fs.writeFileSync(new URL('robots.svg', DOCS), gallery([
-  { seed: 'ada', overrides: { build: 'walker', body: 'Orange' }, state: 'active' },
+  { seed: 'nova', overrides: { build: 'walker', body: 'Orange' }, state: 'active' },
   { seed: 'grace', overrides: { build: 'tank', body: 'Blue' }, state: 'active' },
   { seed: 'linus', overrides: { build: 'ball', body: 'Pink' }, state: 'needs' },
   { seed: 'margaret', overrides: { build: 'walker', body: 'Lime' }, state: 'waiting' },
