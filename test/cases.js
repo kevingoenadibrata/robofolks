@@ -8,7 +8,7 @@
              is a redraw: check it's intended before updating. */
 
 import crypto from 'node:crypto';
-import * as bot from '../src/index.js';
+import * as folk from '../src/index.js';
 
 export const SEEDS = [
   // Project paths, the way agenthub seeds its robots.
@@ -33,18 +33,18 @@ const hash = (svgs) => crypto.createHash('sha256').update(svgs.join('\n')).diges
 
 /** A seed's traits with the paint as its name, so the snapshot reads. */
 export function seedTraits(seed, overrides = null) {
-  const { body, ...parts } = bot.botTraits(seed, overrides);
-  return { body: bot.BOT_BODY_NAMES[bot.BOT_BODIES.indexOf(body)], ...parts };
+  const { body, ...parts } = folk.folkTraits(seed, overrides);
+  return { body: folk.FOLK_BODY_NAMES[folk.FOLK_BODIES.indexOf(body)], ...parts };
 }
 
 /** One hash per animation state and per walk direction, each covering every frame. */
 function frameHashes(traits) {
   const out = {};
-  for (const state of bot.BOT_STATES) {
-    out[state] = hash(Array.from({ length: TICKS }, (_, t) => bot.botSvg(traits, state, t)));
+  for (const state of folk.FOLK_STATES) {
+    out[state] = hash(Array.from({ length: TICKS }, (_, t) => folk.folkSvg(traits, state, t)));
   }
-  for (const view of bot.BOT_VIEWS) {
-    out[view] = hash(Array.from({ length: bot.BOT_WALK_FRAMES }, (_, f) => bot.botWalkSvg(traits, view, f)));
+  for (const view of folk.FOLK_VIEWS) {
+    out[view] = hash(Array.from({ length: folk.FOLK_WALK_FRAMES }, (_, f) => folk.folkWalkSvg(traits, view, f)));
   }
   return out;
 }
@@ -53,11 +53,11 @@ function frameHashes(traits) {
  *  colors, so it's covered once per paint on a single build instead. */
 function buildCases() {
   const cases = [];
-  const { build, antenna, ears, chest } = bot.BOT_PARTS;
+  const { build, antenna, ears, chest } = folk.FOLK_PARTS;
   for (const b of build) for (const a of antenna) for (const e of ears) for (const c of chest) {
     cases.push({ name: `Orange ${b} ${a} ${e} ${c}`, parts: { body: 'Orange', build: b, antenna: a, ears: e, chest: c } });
   }
-  for (const body of bot.BOT_BODY_NAMES.slice(1)) {
+  for (const body of folk.FOLK_BODY_NAMES.slice(1)) {
     cases.push({ name: `${body} walker mast bolt lights`, parts: { body, build: 'walker', antenna: 'mast', ears: 'bolt', chest: 'lights' } });
   }
   return cases;
@@ -69,7 +69,7 @@ export function computeSnapshots() {
     seeds: SEEDS.map((seed) => ({ seed, traits: seedTraits(seed) })),
     builds: buildCases().map(({ name, parts }) => {
       // phase 0 so frames line up with ticks; the seed's own phase is covered by `seeds`.
-      const traits = { ...bot.botTraits('', parts), phase: 0 };
+      const traits = { ...folk.folkTraits('', parts), phase: 0 };
       return { name, frames: frameHashes(traits) };
     }),
   };

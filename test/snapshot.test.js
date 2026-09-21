@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import * as bot from '../src/index.js';
+import * as folk from '../src/index.js';
 import { SEEDS, computeSnapshots, seedTraits } from './cases.js';
 
 const FILE = new URL('snapshots.json', import.meta.url);
@@ -46,23 +46,23 @@ if (process.env.UPDATE_SNAPSHOTS) {
 
 test('the seeds cover every paint and part', () => {
   const picked = SEEDS.map(seedTraits);
-  assert.deepEqual(new Set(picked.map((tr) => tr.body)), new Set(bot.BOT_BODY_NAMES));
-  for (const [part, options] of Object.entries(bot.BOT_PARTS)) {
+  assert.deepEqual(new Set(picked.map((tr) => tr.body)), new Set(folk.FOLK_BODY_NAMES));
+  for (const [part, options] of Object.entries(folk.FOLK_PARTS)) {
     assert.deepEqual(new Set(picked.map((tr) => tr[part])), new Set(options), `seeds don't cover every ${part}`);
   }
 });
 
 test('seeding is deterministic', () => {
   for (const seed of SEEDS) {
-    assert.deepEqual(bot.botTraits(seed), bot.botTraits(seed));
-    assert.equal(bot.botSvg(bot.botTraits(seed), 'active', 7), bot.botSvg(bot.botTraits(seed), 'active', 7));
+    assert.deepEqual(folk.folkTraits(seed), folk.folkTraits(seed));
+    assert.equal(folk.folkSvg(folk.folkTraits(seed), 'active', 7), folk.folkSvg(folk.folkTraits(seed), 'active', 7));
   }
 });
 
 test('overrides win over the seed, and unknown values are ignored', () => {
   const seed = '/Users/kevingo/Projects/agenthub';
   const base = seedTraits(seed);
-  const build = bot.BOT_PARTS.build.find((b) => b !== base.build);
+  const build = folk.FOLK_PARTS.build.find((b) => b !== base.build);
   assert.deepEqual(seedTraits(seed, { body: 'Blue', build }), { ...base, body: 'Blue', build });
   assert.deepEqual(seedTraits(seed, { body: 'Chartreuse', ears: 'antlers', chest: 42, antenna: null }), base);
 });

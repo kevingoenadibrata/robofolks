@@ -1,34 +1,33 @@
-import type { BotState, BotTraits, BotView } from './index.js';
+import type { FolkState, FolkTraits, FolkView, FolkWho } from './index.js';
 
-/** A seed string, or traits for a specific build. */
-export type BotWho = string | (Omit<BotTraits, 'phase'> & { phase?: number });
+export type { FolkWho };
 
 /** Anything robots can be drawn into; a DOM element in practice. */
-export interface BotElement {
+export interface FolkElement {
   innerHTML: string;
   readonly isConnected: boolean;
 }
 
-export interface MountedBot {
-  el: BotElement;
-  traits: BotTraits;
-  state: BotState;
-  view: BotView | null;
+export interface MountedFolk {
+  el: FolkElement;
+  traits: FolkTraits;
+  state: FolkState;
+  view: FolkView | null;
 }
 
-export function mountBot(
-  el: BotElement,
-  who: BotWho,
-  state?: BotState,
-  options?: { view?: BotView | null },
-): MountedBot;
-export function updateBot(
-  bot: MountedBot,
-  changes?: { who?: BotWho; state?: BotState; view?: BotView | null },
+export function mountFolk(
+  el: FolkElement,
+  who: FolkWho,
+  state?: FolkState,
+  options?: { view?: FolkView | null },
+): MountedFolk;
+export function updateFolk(
+  folk: MountedFolk,
+  changes?: { who?: FolkWho; state?: FolkState; view?: FolkView | null },
 ): void;
-export function setBotState(bot: MountedBot, state: BotState): void;
-export function unmountBot(bot: MountedBot): void;
+export function setFolkState(folk: MountedFolk, state: FolkState): void;
+export function unmountFolk(folk: MountedFolk): void;
 /** Returns a function that removes the listener. */
-export function onBotTick(fn: (tick: number) => void): () => void;
-export function currentBotTick(): number;
+export function onFolkTick(fn: (tick: number) => void): () => void;
+export function currentFolkTick(): number;
 export function prefersReducedMotion(): boolean;

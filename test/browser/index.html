@@ -1,0 +1,263 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>robo-folk browser tests</title>
+<body>
+<script type="module">
+  /* Run by run.js; results land in window.testResults. Also works opened
+     by hand from a local server, with results in the console. */
+  import { FOLK_LOOP_TICKS, FOLK_TICK_MS, folkTraits, folkSvg, folkWalkSvg, folkFrame, folkWalkFrame, folkAnimatedSvg } from '../../src/index.js';
+  import { frameShapes } from '../../src/core.js';
+  import { RoboFolkElement, defineRoboFolk } from '../../src/element.js';
+
+  const tests = [];
+  const test = (name, fn) => tests.push({ name, fn });
+  const assert = (ok, message) => { if (!ok) throw new Error(message); };
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function avatar(attributes, tag = 'robo-folk') {
+    const el = document.createElement(tag);
+    for (const [name, value] of Object.entries(attributes)) el.setAttribute(name, value);
+    document.body.append(el);
+    return el;
+  }
+  const drawing = (el) => el.shadowRoot.querySelector('div').innerHTML;
+  const isAnimated = (el) => el.shadowRoot.querySelector('svg style') !== null;
+  /** Markup as the browser serializes it, to compare with innerHTML. Shapes
+   *  are parsed inside an <svg>, or the HTML parser nests self-closed rects. */
+  function serialized(markup) {
+    const div = document.createElement('div');
+    if (markup.startsWith('<svg')) {
+      div.innerHTML = markup;
+      return div.innerHTML;
+    }
+    div.innerHTML = `<svg>${markup}</svg>`;
+    return div.firstElementChild.innerHTML;
+  }
+  async function until(check, what, ms = 3000) {
+    const end = performance.now() + ms;
+    while (!check()) {
+      if (performance.now() > end) throw new Error(`timed out waiting for ${what}`);
+      await sleep(20);
+    }
+  }
+
+  // ---------- <robo-folk> ----------
+
+  test('importing registers <robo-folk>', () => {
+    assert(customElements.get('robo-folk') === RoboFolkElement, 'not registered');
+  });
+
+  test('draws the first frame at once, then swaps in the animated SVG', async () => {
+    const el = avatar({ seed: 'ada', state: 'active' });
+    const traits = folkTraits('ada');
+    assert(drawing(el) === serialized(folkSvg(traits, 'active', 0)), 'first frame not drawn on connect');
+    await until(() => isAnimated(el), 'the animated SVG');
+    assert(drawing(el) === serialized(folkAnimatedSvg(traits, 'active')), 'animated SVG differs');
+    const running = el.shadowRoot.querySelector('svg').getAnimations({ subtree: true }).length;
+    assert(reduced ? running === 0 : running > 0, `${running} animations running`);
+    el.remove();
+  });
+
+  test('a robot already built comes from the cache straight away', async () => {
+    const first = avatar({ seed: 'cached', state: 'needs' });
+    await until(() => isAnimated(first), 'the animated SVG');
+    const second = avatar({ seed: 'cached', state: 'needs' });
+    assert(isAnimated(second), 'second robot waited for its SVG');
+    first.remove();
+    second.remove();
+  });
+
+  test('traits come from the seed with hand-picked parts', () => {
+    const el = avatar({ seed: 'grace', build: 'tank', ears: 'fin', chest: 'antlers' });
+    assert(JSON.stringify(el.traits) === JSON.stringify(folkTraits('grace', { build: 'tank', ears: 'fin', chest: 'antlers' })), 'traits differ');
+    assert(el.traits.build === 'tank' && el.traits.ears === 'fin', 'parts not applied');
+    el.remove();
+  });
+
+  test('several attribute changes redraw once, straight after the current task', async () => {
+    const el = avatar({ seed: 'ada', motion: 'none' });
+    const observer = new MutationObserver(() => {});
+    observer.observe(el.shadowRoot.querySelector('div'), { childList: true });
+    el.setAttribute('seed', 'linus');
+    el.setAttribute('view', 'left');
+    el.setAttribute('build', 'ball');
+    await Promise.resolve();
+    const redraws = observer.takeRecords().length;
+    observer.disconnect();
+    assert(redraws === 1, `${redraws} redraws`);
+    assert(drawing(el) === serialized(folkWalkSvg(folkTraits('linus', { build: 'ball' }), 'left', 0)), 'wrong drawing');
+    el.remove();
+  });
+
+  test('motion="none" holds the first frame', async () => {
+    const el = avatar({ seed: 'ada', state: 'needs', motion: 'none' });
+    const first = drawing(el);
+    assert(first === serialized(folkSvg(folkTraits('ada'), 'needs', 0)), 'not the first frame');
+    await sleep(FOLK_TICK_MS * 3);
+    assert(drawing(el) === first && !isAnimated(el), 'it moved');
+    el.remove();
+  });
+
+  test('motion="clock" draws on the shared clock, and stops when switched off', async () => {
+    const el = avatar({ seed: 'ada', state: 'active', motion: 'clock' });
+    const start = drawing(el);
+    await sleep(FOLK_TICK_MS * 3);
+    assert(reduced ? drawing(el) === start : drawing(el) !== start, reduced ? 'moved under reduced motion' : 'did not animate');
+
+    el.state = 'needs';
+    await Promise.resolve();
+    assert(drawing(el).includes('#fabd2f'), 'state change not drawn'); // the needs-you yellow
+
+    el.motion = 'none';
+    await Promise.resolve();
+    const still = drawing(el);
+    await sleep(FOLK_TICK_MS * 3);
+    assert(drawing(el) === still, 'kept animating after motion="none"');
+    el.remove();
+  });
+
+  test('a removed robot stops drawing, and draws again when put back', async () => {
+    const el = avatar({ seed: 'ada', state: 'active', motion: 'clock' });
+    el.remove();
+    const removed = drawing(el);
+    await sleep(FOLK_TICK_MS * 3);
+    assert(drawing(el) === removed, 'drew while removed');
+    document.body.append(el);
+    const back = drawing(el);
+    await sleep(FOLK_TICK_MS * 3);
+    assert(reduced || drawing(el) !== back, 'did not animate again');
+    el.remove();
+  });
+
+  test('properties reflect to attributes, and unknown values fall back', async () => {
+    const el = avatar({});
+    el.seed = 'ada';
+    el.state = 'sleeping';
+    el.view = 'up';
+    el.motion = 'wiggle';
+    assert(el.getAttribute('seed') === 'ada' && el.getAttribute('state') === 'sleeping', 'not reflected');
+    assert(el.state === 'waiting' && el.view === null && el.motion === 'css', 'no fallback');
+    el.view = 'left';
+    assert(el.getAttribute('view') === 'left', 'view not reflected');
+    el.view = null;
+    assert(!el.hasAttribute('view'), 'view not removed');
+    await Promise.resolve();
+    el.remove();
+  });
+
+  test('properties set before the element is defined still apply', () => {
+    const el = document.createElement('late-avatar');
+    el.seed = 'ada';
+    el.state = 'needs';
+    document.body.append(el);
+    defineRoboFolk('late-avatar');
+    assert(el instanceof RoboFolkElement, 'not upgraded');
+    assert(el.getAttribute('seed') === 'ada' && el.state === 'needs', 'early properties lost');
+    assert(el.shadowRoot.querySelector('svg'), 'not drawn');
+    defineRoboFolk('late-avatar'); // again: no throw
+    el.remove();
+  });
+
+  test('72px wide by default at 36:44, and sized with CSS', () => {
+    const el = avatar({ seed: 'ada' });
+    let box = el.getBoundingClientRect();
+    assert(box.width === 72 && box.height === 88, `default ${box.width}x${box.height}`);
+    const svgBox = el.shadowRoot.querySelector('svg').getBoundingClientRect();
+    assert(svgBox.width === 72 && svgBox.height === 88, `svg ${svgBox.width}x${svgBox.height}`);
+    el.style.width = '36px';
+    box = el.getBoundingClientRect();
+    assert(box.width === 36 && box.height === 44, `styled ${box.width}x${box.height}`);
+    el.remove();
+  });
+
+  test("page CSS doesn't reach inside the robot", () => {
+    const style = document.createElement('style');
+    style.textContent = 'rect { fill: red !important } svg { display: none !important }';
+    document.head.append(style);
+    const el = avatar({ seed: 'ada', motion: 'none' });
+    const rect = el.shadowRoot.querySelector('rect');
+    assert(getComputedStyle(rect).fill !== 'rgb(255, 0, 0)', 'page CSS leaked in');
+    assert(getComputedStyle(el.shadowRoot.querySelector('svg')).display === 'block', 'page CSS hid the svg');
+    style.remove();
+    el.remove();
+  });
+
+  // ---------- animated SVG, played by the browser ----------
+
+  // Seeks every CSS animation to the middle of each tick and checks the shapes
+  // showing, and the bob, against the frame-by-frame drawing. All the SVGs sit
+  // in the page together, so it also checks their CSS doesn't collide.
+  const ROBOTS = [
+    ['ada', null], ['/Users/kevingo/Projects/cellar', null], ['grace', { build: 'tank', chest: 'core' }],
+  ];
+  const ANIMATIONS = [['active', null], ['needs', null], ['waiting', null], ['active', 'left'], ['active', 'back']];
+  const cases = ROBOTS.flatMap(([seed, overrides]) => ANIMATIONS.map(([state, view]) => {
+    const traits = folkTraits(seed, overrides);
+    return { name: `${seed.split('/').pop()} ${traits.build} ${view ? `walk ${view}` : state}`, traits, state, view };
+  }));
+
+  function expectedAt({ traits, state, view }, tick) {
+    const frame = view ? folkWalkFrame(traits, view, Math.floor(tick / 2)) : folkFrame(traits, state, tick);
+    const { rects, glyphs } = frameShapes(traits, view ? 'active' : state, { ...frame, dy: 0 });
+    return { dy: frame.dy, shapes: [...rects, ...glyphs].map((m) => serialized(m)).sort() };
+  }
+
+  function shownIn(svg) {
+    const shapes = [...svg.querySelectorAll('rect, g[fill]')].filter((el) => !el.parentElement.hasAttribute('fill'));
+    const visible = shapes.filter((el) => {
+      for (let p = el.parentElement; p !== svg; p = p.parentElement) {
+        if (p.hasAttribute('class') && getComputedStyle(p).opacity !== '1') return false;
+      }
+      return true;
+    });
+    const transform = [...svg.querySelectorAll('g[class]')].map((g) => getComputedStyle(g).transform).find((t) => t !== 'none');
+    return {
+      dy: transform ? Number(new DOMMatrix(transform).f) : 0,
+      shapes: visible.map((el) => el.outerHTML).sort(),
+    };
+  }
+
+  test('animated SVGs show the right frame at every tick of the loop', () => {
+    const holder = document.createElement('div');
+    holder.innerHTML = cases.map((c) => folkAnimatedSvg(c.traits, c.state, { view: c.view })).join('');
+    document.body.append(holder);
+    const svgs = [...holder.children];
+    try {
+      cases.forEach((c, i) => {
+        const animations = svgs[i].getAnimations({ subtree: true });
+        if (reduced) {
+          assert(animations.length === 0, `${c.name}: ${animations.length} animations under reduced motion`);
+          assert(JSON.stringify(shownIn(svgs[i])) === JSON.stringify(expectedAt(c, 0)), `${c.name}: not holding the first frame`);
+          return;
+        }
+        animations.forEach((a) => a.pause());
+        const ticks = c.view ? FOLK_LOOP_TICKS.walk : FOLK_LOOP_TICKS[c.state];
+        for (let tick = 0; tick < ticks; tick++) {
+          animations.forEach((a) => { a.currentTime = (tick + 0.5) * FOLK_TICK_MS; });
+          const shown = shownIn(svgs[i]);
+          const want = expectedAt(c, tick);
+          assert(shown.dy === want.dy, `${c.name}: bob ${shown.dy}, expected ${want.dy} at tick ${tick}`);
+          assert(JSON.stringify(shown.shapes) === JSON.stringify(want.shapes), `${c.name}: wrong shapes at tick ${tick}`);
+        }
+      });
+    } finally {
+      holder.remove();
+    }
+  });
+
+  // ---------- run ----------
+
+  const results = [];
+  for (const { name, fn } of tests) {
+    try {
+      await fn();
+      results.push({ name, error: null });
+    } catch (e) {
+      results.push({ name, error: e.message });
+    }
+  }
+  console.table(results);
+  window.testResults = results;
+</script>
+</body>

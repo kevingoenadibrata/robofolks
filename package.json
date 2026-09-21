@@ -1,7 +1,15 @@
 {
-  "name": "bot-avatar",
+  "name": "robofolks",
   "version": "0.1.0",
   "description": "Seeded, animated pixel-robot avatars drawn as SVG or onto a canvas",
+  "license": "MIT",
+  "author": "Kevin Goenadibrata",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevingoenadibrata/robofolks.git"
+  },
+  "homepage": "https://github.com/kevingoenadibrata/robofolks#readme",
+  "bugs": "https://github.com/kevingoenadibrata/robofolks/issues",
   "type": "module",
   "exports": {
     ".": {
@@ -12,17 +20,57 @@
       "types": "./src/dom.d.ts",
       "default": "./src/dom.js"
     },
+    "./element": {
+      "types": "./src/element.d.ts",
+      "default": "./src/element.js"
+    },
+    "./png": {
+      "types": "./src/png.d.ts",
+      "default": "./src/png.js"
+    },
+    "./react": {
+      "types": "./src/react.d.ts",
+      "default": "./src/react.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "src"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/element.js"
+  ],
   "engines": {
     "node": ">=20.19"
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "test:update": "UPDATE_SNAPSHOTS=1 node --test test/*.test.js"
-  }
+    "test:update": "UPDATE_SNAPSHOTS=1 node --test test/*.test.js",
+    "test:browser": "node test/browser/run.js",
+    "images": "node scripts/make-images.js"
+  },
+  "bin": {
+    "robofolks": "./src/cli.js"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "keywords": [
+    "avatar",
+    "identicon",
+    "svg",
+    "pixel-art",
+    "robot",
+    "animation"
+  ]
 }
