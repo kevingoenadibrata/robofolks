@@ -5,6 +5,8 @@
 
 Seeded, animated pixel-robot avatars, in one dependency-free package.
 
+**[Try it: type a seed, watch a robot →](https://kevingoenadibrata.github.io/robofolks/)**
+
 <p align="center">
   <img src="docs/robots.svg" alt="Five pixel robots: an orange walker working, a blue tank working, a pink ball with a ! over its head, a lime walker dozing with z's, a cream tank walking" width="564" />
 </p>

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>robofolks — every string gets a robot</title>
+<meta name="description" content="Seeded, animated pixel-robot avatars. No dependencies: animated SVGs that need no JavaScript, a web component, React, PNGs, sprite sheets and a CLI." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23282828'/%3E%3Crect x='3' y='4' width='10' height='8' fill='%23fe8019'/%3E%3Crect x='5' y='6' width='2' height='2' fill='%238ec07c'/%3E%3Crect x='9' y='6' width='2' height='2' fill='%238ec07c'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" />
+<script type="importmap">
+  {
+    "imports": {
+      "robofolks": "https://unpkg.com/robofolks@0.1.0/src/index.js",
+      "robofolks/": "https://unpkg.com/robofolks@0.1.0/src/"
+    }
+  }
+</script>
+<style>
+  /* The robots are terminal block art, so the page wears their own colors:
+     Gruvbox, with the three status lights (aqua working, yellow needs you,
+     grey idle) as the only accents. */
+  :root {
+    --bg: #1d2021;
+    --panel: #282828;
+    --panel-lit: #32302f;
+    --line: #3c3836;
+    --line-lit: #504945;
+    --text: #ebdbb2;
+    --muted: #a89984;
+    --dim: #7c6f64;
+    --working: #8ec07c;
+    --needs: #fabd2f;
+    --walk: #fe8019;
+    --unit: 8px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 400 16px/1.6 Geist, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--working); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { color: var(--text); }
+  :focus-visible { outline: 2px solid var(--walk); outline-offset: 3px; }
+  h1, h2, h3 { font-family: 'Chakra Petch', system-ui, sans-serif; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  code, kbd, pre { font-family: 'Geist Mono', ui-monospace, monospace; }
+
+  .wrap { width: min(1080px, 100% - 32px); margin-inline: auto; }
+  .eyebrow {
+    font: 500 12px/1 'Geist Mono', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  /* ---------- masthead ---------- */
+  header { border-bottom: 1px solid var(--line); }
+  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; flex-wrap: wrap; }
+  .wordmark { font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.02em; }
+  .wordmark span { color: var(--walk); }
+  .links { display: flex; gap: 20px; font: 500 14px/1 'Geist Mono', monospace; }
+  .links a { text-decoration: none; color: var(--muted); }
+  .links a:hover { color: var(--text); }
+
+  /* ---------- hero: the seed bench ---------- */
+  .hero { padding: clamp(40px, 7vw, 80px) 0 56px; }
+  .hero h1 { font-size: clamp(38px, 7vw, 68px); line-height: 1.02; max-width: 12ch; }
+  .hero h1 em { font-style: normal; color: var(--walk); }
+  .lede { margin: 20px 0 0; max-width: 46ch; color: var(--muted); font-size: 18px; }
+
+  .bench {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+    gap: 24px;
+    align-items: stretch;
+  }
+  @media (max-width: 820px) { .bench { grid-template-columns: 1fr; } }
+
+  .stage {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    padding: 32px 16px 24px;
+    min-height: 300px;
+    /* floor grid, one robot pixel per cell */
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: center;
+  }
+  .stage robo-folk { width: min(240px, 56vw); }
+  .stage-label {
+    position: absolute; top: 10px; left: 12px;
+    font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+  }
+
+  .deck { display: flex; flex-direction: column; gap: 16px; }
+  .field { display: block; }
+  .field label { display: block; margin-bottom: 8px; }
+  .field input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg);
+    border: 1px solid var(--line-lit);
+    color: var(--text);
+    font: 500 16px/1.2 'Geist Mono', monospace;
+  }
+  .field input:focus { border-color: var(--walk); outline: none; }
+
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes button {
+    flex: 1 1 auto;
+    padding: 9px 12px;
+    background: transparent;
+    border: 1px solid var(--line-lit);
+    color: var(--muted);
+    font: 500 13px/1 'Geist Mono', monospace;
+    cursor: pointer;
+  }
+  .modes button:hover { color: var(--text); border-color: var(--dim); }
+  .modes button[aria-pressed='true'] { color: var(--bg); background: var(--tint, var(--working)); border-color: var(--tint, var(--working)); }
+
+  .spec { border: 1px solid var(--line); background: var(--panel); padding: 16px; }
+  .spec dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font: 400 14px/1.4 'Geist Mono', monospace; }
+  .spec dt { color: var(--dim); }
+  .spec dd { margin: 0; text-align: right; }
+  .spec .swatch { display: inline-block; width: 9px; height: 9px; margin-right: 7px; vertical-align: 0; }
+
+  /* ---------- sections ---------- */
+  section { padding: 56px 0; border-top: 1px solid var(--line); }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .head h2 { font-size: clamp(22px, 3vw, 28px); }
+  .head p { margin: 0; color: var(--muted); max-width: 52ch; }
+
+  .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .roster button {
+    display: grid; justify-items: center; gap: 6px;
+    padding: 18px 8px 12px;
+    background: var(--panel); border: 1px solid var(--line); cursor: pointer; color: var(--muted);
+    font: 400 12px/1.3 'Geist Mono', monospace;
+    word-break: break-all;
+  }
+  .roster button:hover, .roster button:focus-visible { background: var(--panel-lit); color: var(--text); border-color: var(--line-lit); }
+  .roster robo-folk { width: 62px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); background: var(--panel); padding: 18px; }
+  .card h3 { font-size: 15px; font-family: 'Geist Mono', monospace; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+  .card p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+  pre {
+    margin: 0; padding: 12px; overflow-x: auto;
+    background: var(--bg); border: 1px solid var(--line);
+    font-size: 13px; line-height: 1.6; color: var(--text);
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  pre .c { color: var(--dim); }
+  pre .s { color: var(--working); }
+
+  .walks { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .walks figure { flex: 1 1 130px; margin: 0; padding: 16px 8px 10px; background: var(--panel); display: grid; justify-items: center; gap: 8px; }
+  .walks figcaption { font: 400 12px/1 'Geist Mono', monospace; color: var(--dim); }
+  .walks robo-folk { width: 84px; }
+
+  .parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .parts div { background: var(--panel); padding: 16px 12px 12px; display: grid; justify-items: center; gap: 8px; text-align: center; }
+  .parts robo-folk { width: 88px; }
+  .parts b { font: 500 13px/1.2 'Geist Mono', monospace; font-weight: 500; color: var(--text); }
+  .parts small { color: var(--dim); font: 400 12px/1.3 'Geist Mono', monospace; }
+
+  footer { border-top: 1px solid var(--line); padding: 32px 0 56px; color: var(--dim); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  .noscript { padding: 16px; border: 1px solid var(--needs); color: var(--needs); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap masthead">
+    <div class="wordmark">robo<span>folks</span></div>
+    <nav class="links">
+      <a href="#roster">Roster</a>
+      <a href="#use">Use it</a>
+      <a href="https://github.com/kevingoenadibrata/robofolks">GitHub</a>
+      <a href="https://www.npmjs.com/package/robofolks">npm</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <p class="eyebrow">Seeded pixel avatars · no dependencies</p>
+    <h1>Every string gets a <em>robot</em>.</h1>
+    <p class="lede">
+      A username, an email, a project path — the same string always builds the same
+      robot, down to its antenna. They animate themselves in an SVG, with no
+      JavaScript needed to play it.
+    </p>
+
+    <div class="bench">
+      <div class="stage">
+        <span class="stage-label" id="stage-label">Working</span>
+        <robo-folk id="hero" seed="kevingo" state="active"></robo-folk>
+      </div>
+
+      <div class="deck">
+        <div class="field">
+          <label class="eyebrow" for="seed">Type anything</label>
+          <input id="seed" value="kevingo" spellcheck="false" autocomplete="off" aria-describedby="spec" />
+        </div>
+        <div class="modes" id="modes">
+          <button data-state="active" style="--tint: var(--working)" aria-pressed="true">Working</button>
+          <button data-state="needs" style="--tint: var(--needs)" aria-pressed="false">Needs you</button>
+          <button data-state="waiting" style="--tint: var(--dim)" aria-pressed="false">Idle</button>
+          <button data-view="left" style="--tint: var(--walk)" aria-pressed="false">Walking</button>
+        </div>
+        <div class="spec" id="spec">
+          <dl>
+            <dt>Paint</dt><dd id="spec-body">—</dd>
+            <dt>Build</dt><dd id="spec-build">—</dd>
+            <dt>Antenna</dt><dd id="spec-antenna">—</dd>
+            <dt>Ears</dt><dd id="spec-ears">—</dd>
+            <dt>Chest</dt><dd id="spec-chest">—</dd>
+          </dl>
+        </div>
+        <pre id="snippet"><span class="c">&lt;!-- this robot, anywhere --&gt;</span>
+&lt;robo-folk seed=<span class="s">"kevingo"</span> state=<span class="s">"active"</span>&gt;&lt;/robo-folk&gt;</pre>
+      </div>
+    </div>
+  </div>
+
+  <section id="roster">
+    <div class="wrap">
+      <div class="head">
+        <h2>One seed each</h2>
+        <p>Every robot below is drawn from the label under it. Pick one to load it above.</p>
+      </div>
+      <div class="roster" id="roster-grid"></div>
+    </div>
+  </section>
+
+  <section id="states">
+    <div class="wrap">
+      <div class="head">
+        <h2>Four things a robot does</h2>
+        <p>Working, needing you, dozing — and walking in any of four directions, four frames each.</p>
+      </div>
+      <div class="walks" id="walks"></div>
+    </div>
+  </section>
+
+  <section id="parts">
+    <div class="wrap">
+      <div class="head">
+        <h2>Three builds, and the bits</h2>
+        <p>The seed picks a build, antenna, ears and chest panel. Set any of them by hand when you'd rather choose.</p>
+      </div>
+      <div class="parts" id="parts-grid"></div>
+    </div>
+  </section>
+
+  <section id="use">
+    <div class="wrap">
+      <div class="head">
+        <h2>Use it</h2>
+        <p><code>npm install robofolks</code> — or skip installing and point an <code>&lt;img&gt;</code> at an SVG you generated.</p>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <h3>Web component</h3>
+          <p>Works in plain HTML, Vue, Svelte, anywhere.</p>
+<pre><span class="c">// registers &lt;robo-folk&gt;</span>
+import <span class="s">'robofolks/element'</span>;
+
+&lt;robo-folk seed=<span class="s">"ada"</span>
+  state=<span class="s">"active"</span>&gt;&lt;/robo-folk&gt;</pre>
+        </div>
+        <div class="card">
+          <h3>React</h3>
+          <p>Renders the SVG itself, so server rendering needs no hydration.</p>
+<pre>import { RoboFolk } from <span class="s">'robofolks/react'</span>;
+
+&lt;RoboFolk seed=<span class="s">"ada"</span>
+  state=<span class="s">"active"</span> size={48} /&gt;</pre>
+        </div>
+        <div class="card">
+          <h3>A file on disk</h3>
+          <p>An SVG that plays itself, a PNG, or a sprite sheet for a game engine.</p>
+<pre>npx robofolks svg ada \
+  --state active -o ada.svg
+
+npx robofolks sheet ada -o sheet.png</pre>
+        </div>
+        <div class="card">
+          <h3>Anywhere else</h3>
+          <p>Pure functions: seed in, SVG string out. Node, workers, build time.</p>
+<pre>import { folkTraits, folkAnimatedSvg }
+  from <span class="s">'robofolks'</span>;
+
+folkAnimatedSvg(<span class="s">'ada'</span>, <span class="s">'needs'</span>);</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>MIT · built for <a href="https://github.com/kevingoenadibrata/robofolks">agent dashboards</a>, useful anywhere</span>
+  <span>Robots hold still when you ask for reduced motion.</span>
+</footer>
+
+<script type="module">
+  import { FOLK_BODIES, FOLK_BODY_NAMES, FOLK_PART_NAMES, folkTraits } from 'robofolks';
+  import 'robofolks/element.js';
+
+  const hero = document.getElementById('hero');
+  const seedInput = document.getElementById('seed');
+  const stageLabel = document.getElementById('stage-label');
+  const snippet = document.getElementById('snippet');
+  const paintName = (traits) => FOLK_BODY_NAMES[FOLK_BODIES.findIndex((paint) => paint[1] === traits.body[1])];
+
+  // A seed in the address bar, so a robot you like can be shared.
+  const fromUrl = new URLSearchParams(location.search).get('seed');
+  if (fromUrl !== null) seedInput.value = fromUrl;
+
+  function showSpec() {
+    const traits = folkTraits(seedInput.value);
+    const paint = paintName(traits);
+    const swatch = `<span class="swatch" style="background:${traits.body[1]}"></span>`;
+    document.getElementById('spec-body').innerHTML = `${swatch}${paint}`;
+    for (const part of ['build', 'antenna', 'ears', 'chest']) {
+      document.getElementById(`spec-${part}`).textContent = FOLK_PART_NAMES[part][traits[part]];
+    }
+    const escaped = seedInput.value.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
+    const mode = hero.view ? `view="${hero.view}"` : `state="${hero.state}"`;
+    snippet.innerHTML = `<span class="c">&lt;!-- this robot, anywhere --&gt;</span>\n`
+      + `&lt;robo-folk seed=<span class="s">"${escaped}"</span> ${mode.replace(/"([^"]*)"/, '<span class="s">"$1"</span>')}&gt;&lt;/robo-folk&gt;`;
+  }
+
+  function setSeed(value) {
+    seedInput.value = value;
+    hero.seed = value;
+    showSpec();
+    const url = new URL(location.href);
+    url.searchParams.set('seed', value);
+    history.replaceState(null, '', url);
+  }
+
+  seedInput.addEventListener('input', () => setSeed(seedInput.value));
+  hero.seed = seedInput.value;
+
+  document.getElementById('modes').addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    for (const other of event.currentTarget.children) other.setAttribute('aria-pressed', String(other === button));
+    hero.view = button.dataset.view ?? null;
+    if (button.dataset.state) hero.state = button.dataset.state;
+    stageLabel.textContent = button.textContent;
+    showSpec();
+  });
+
+  // The roster: real-looking seeds, so the point lands.
+  const SEEDS = [
+    'ada', 'grace', 'linus', 'margaret', 'octocat', 'kevingo',
+    'you@example.com', '~/Projects/agenthub', 'deploy-bot', 'nightly-build',
+    'main', 'feature/login', 'staging', 'prod', 'qa-runner', 'docs-site',
+    'alex', 'sam', 'jordan', 'priya', 'kenji', 'noor', 'mateo', 'wren',
+  ];
+  const roster = document.getElementById('roster-grid');
+  roster.append(...SEEDS.map((seed) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.innerHTML = `<robo-folk seed="${seed.replaceAll('"', '&quot;')}" state="active" motion="css"></robo-folk><span>${seed.replaceAll('<', '&lt;')}</span>`;
+    button.addEventListener('click', () => {
+      setSeed(seed);
+      document.querySelector('.bench').scrollIntoView({ block: 'center' });
+    });
+    return button;
+  }));
+
+  // Walk cycle, one per direction.
+  const walks = document.getElementById('walks');
+  walks.innerHTML = ['front', 'back', 'left', 'right']
+    .map((view) => `<figure><robo-folk seed="grace" view="${view}"></robo-folk><figcaption>walking ${view}</figcaption></figure>`)
+    .join('') + `<figure><robo-folk seed="grace" state="needs"></robo-folk><figcaption>needs you</figcaption></figure>`;
+
+  // The three builds, each wearing a different chest panel.
+  const parts = document.getElementById('parts-grid');
+  parts.innerHTML = [
+    ['walker', 'lights', 'Three lights'],
+    ['tank', 'grille', 'Grille'],
+    ['ball', 'core', 'Single light'],
+  ].map(([build, chest, label]) => `
+    <div>
+      <robo-folk seed="ada" build="${build}" chest="${chest}" state="active"></robo-folk>
+      <b>${build}</b>
+      <small>chest: ${label}</small>
+    </div>`).join('');
+
+  showSpec();
+</script>
+</body>
+</html>
