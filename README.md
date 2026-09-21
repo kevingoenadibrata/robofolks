@@ -299,6 +299,10 @@ Two things to keep in mind:
 - Every drawing change needs `npm run test:update`, and the diff should be
   checked before committing: it's the record of how the robots look.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
 MIT © Kevin Goenadibrata
