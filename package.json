@@ -47,7 +47,8 @@
     "test": "node --test test/*.test.js",
     "test:update": "UPDATE_SNAPSHOTS=1 node --test test/*.test.js",
     "test:browser": "node test/browser/run.js",
-    "images": "node scripts/make-images.js"
+    "images": "node scripts/make-images.js",
+    "blueprint": "node blueprint/v2/prototype.mjs"
   },
   "bin": {
     "robofolks": "./src/cli.js"
