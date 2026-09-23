@@ -3,12 +3,32 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>robofolks — every string gets a robot</title>
-<meta name="description" content="Seeded, animated pixel-robot avatars. No dependencies: animated SVGs that need no JavaScript, a web component, React, PNGs, sprite sheets and a CLI." />
+<title>robofolks — animated pixel-robot avatars for AI agents</title>
+<meta name="description" content="Open-source pixel-robot avatars that show what your AI agents are doing: working, waiting on you, or idle. Animated SVGs with no JavaScript, React, a web component, PNGs and a CLI." />
+<link rel="canonical" href="https://kevingoenadibrata.github.io/robofolks/" />
+<meta name="author" content="Kevin Goenadibrata" />
+<meta name="theme-color" content="#1d2021" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="robofolks" />
+<meta property="og:url" content="https://kevingoenadibrata.github.io/robofolks/" />
+<meta property="og:title" content="robofolks — give your agents a face" />
+<meta property="og:description" content="567 animated pixel robots that show what your AI agents are doing: working, waiting on you, or idle. No dependencies, and no JavaScript needed to animate them." />
+<meta property="og:image" content="https://kevingoenadibrata.github.io/robofolks/og-card.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="The robofolks wordmark and the tagline 'give your agents a face', surrounded by ten pixel robots: some working, one with an exclamation mark overhead, two dozing with z's." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="robofolks — give your agents a face" />
+<meta name="twitter:description" content="567 animated pixel robots that show what your AI agents are doing. No dependencies, no JavaScript needed to animate them." />
+<meta name="twitter:image" content="https://kevingoenadibrata.github.io/robofolks/og-card.png" />
+<meta name="twitter:image:alt" content="The robofolks wordmark surrounded by ten pixel robots." />
+<link rel="alternate" type="text/plain" href="llms.txt" title="robofolks for language models" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23282828'/%3E%3Crect x='3' y='4' width='10' height='8' fill='%23fe8019'/%3E%3Crect x='5' y='6' width='2' height='2' fill='%238ec07c'/%3E%3Crect x='9' y='6' width='2' height='2' fill='%238ec07c'/%3E%3C/svg%3E" />
+<link rel="preload" href="fonts/poppkorn.ttf" as="font" type="font/ttf" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bytesized&family=Chakra+Petch:wght@600;700&family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" />
 <script type="importmap">
   {
     "imports": {
@@ -18,6 +38,13 @@
   }
 </script>
 <style>
+  /* Poppkorn by Christian Wischnewski, freeware for personal and corporate
+     use (fontspace.com/poppkorn-font-f29297). Logo only. */
+  @font-face {
+    font-family: Poppkorn;
+    src: url('fonts/poppkorn.ttf') format('truetype');
+    font-display: block;
+  }
   /* The robots are terminal block art, so the page wears their own colors:
      Gruvbox, with the three status lights (aqua working, yellow needs you,
      grey idle) as the only accents. */
@@ -62,8 +89,11 @@
   /* ---------- masthead ---------- */
   header { border-bottom: 1px solid var(--line); }
   .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; flex-wrap: wrap; }
-    /* Bytesized is a pixel face, same family of shapes as the robots. */
-  .wordmark { font-family: Bytesized, 'Chakra Petch', sans-serif; font-weight: 400; font-size: 34px; line-height: 1; letter-spacing: 0.04em; }
+  /* Poppkorn is a pixel face, same family of shapes as the robots. One font
+     pixel is 1/8 of the size, so the size stays a multiple of 8 and there is
+     no letter-spacing: anything else lands glyphs between screen pixels. */
+  .wordmark { font-family: Poppkorn, 'Chakra Petch', sans-serif; font-weight: 400; font-size: 40px; line-height: 1; }
+  .wordmark { color: var(--text); text-decoration: none; }
   .wordmark span { color: var(--walk); }
   .links { display: flex; gap: 20px; font: 500 14px/1 'Geist Mono', monospace; }
   .links a { text-decoration: none; color: var(--muted); }
@@ -152,7 +182,7 @@
   .roster button:hover, .roster button:focus-visible { background: var(--panel-lit); color: var(--text); border-color: var(--line-lit); }
   .roster robo-folk { width: 62px; }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 16px; }
   .card { border: 1px solid var(--line); background: var(--panel); padding: 18px; }
   .card h3 { font-size: 15px; font-family: 'Geist Mono', monospace; font-weight: 500; color: var(--text); margin-bottom: 10px; }
   .card p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
@@ -176,19 +206,157 @@
   .parts b { font: 500 13px/1.2 'Geist Mono', monospace; font-weight: 500; color: var(--text); }
   .parts small { color: var(--dim); font: 400 12px/1.3 'Geist Mono', monospace; }
 
+  .facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .facts div { background: var(--panel); padding: 14px 16px; }
+  .facts dt { font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+  .facts dd { margin: 0; color: var(--text); font-size: 15px; }
+
+  .faq { border-top: 1px solid var(--line); max-width: 760px; }
+  .faq details { border-bottom: 1px solid var(--line); }
+  .faq summary { cursor: pointer; padding: 16px 0; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; font: 500 18px/1 'Geist Mono', monospace; color: var(--dim); }
+  .faq details[open] summary::after { content: '−'; }
+  .faq summary h3 { font: 500 16px/1.4 Geist, system-ui, sans-serif; color: var(--text); }
+  .faq details p { margin: 0 0 18px; color: var(--muted); max-width: 64ch; }
+
   footer { border-top: 1px solid var(--line); padding: 32px 0 56px; color: var(--dim); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
   .noscript { padding: 16px; border: 1px solid var(--needs); color: var(--needs); }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://kevingoenadibrata.github.io/robofolks/#software",
+      "name": "robofolks",
+      "description": "Animated, seeded pixel-robot avatars for AI agents and bots. Animated SVGs that need no JavaScript, a web component, a React component, PNGs, sprite sheets and a CLI, with no dependencies.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Any",
+      "url": "https://kevingoenadibrata.github.io/robofolks/",
+      "downloadUrl": "https://www.npmjs.com/package/robofolks",
+      "installUrl": "https://www.npmjs.com/package/robofolks",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "image": "https://kevingoenadibrata.github.io/robofolks/og-card.png",
+      "author": {
+        "@type": "Person",
+        "name": "Kevin Goenadibrata",
+        "url": "https://github.com/kevingoenadibrata"
+      },
+      "sameAs": [
+        "https://github.com/kevingoenadibrata/robofolks",
+        "https://www.npmjs.com/package/robofolks"
+      ]
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "robofolks",
+      "codeRepository": "https://github.com/kevingoenadibrata/robofolks",
+      "programmingLanguage": [
+        "JavaScript",
+        "TypeScript"
+      ],
+      "runtimePlatform": [
+        "Browser",
+        "Node.js",
+        "Deno",
+        "Bun"
+      ],
+      "license": "https://opensource.org/licenses/MIT",
+      "targetProduct": {
+        "@id": "https://kevingoenadibrata.github.io/robofolks/#software"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is robofolks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "robofolks is a free, open-source JavaScript library that draws animated pixel-robot avatars. Give it any string, such as an agent's name, a username or a project path, and it always draws the same robot for it. Each robot can show a state (working, needs you, idle) or walk in four directions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is it different from DiceBear or an identicon?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Identicons and static avatar sets like DiceBear answer “which account is this.” robofolks answers “what is this thing doing right now”: the robot animates to show whether an agent is working, blocked on you, or idle. It also exports PNGs and game-ready sprite sheets, and has no dependencies. If you only need a static robot, DiceBear is a good choice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How many different robots are there?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "567: 7 paints × 3 builds (walker, tank, ball) × 3 antennas × 3 ear types × 3 chest panels. It's a hand-drawn pixel set rather than a parametric face generator, so a dashboard of twenty agents won't repeat in practice, and the animated states carry most of the recognition."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the same string always get the same robot?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, for the life of a major version. Which robot 50 seeds pick, and every combination of parts, are pinned by snapshot tests, so any change to how a robot looks ships as a breaking change."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do the animations need JavaScript?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. folkAnimatedSvg returns a self-contained SVG animated with CSS keyframes, so it plays in an <img> tag, a GitHub README or documentation. Each one is 1–3 kB gzipped."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which browsers and frameworks does it work with?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Chrome, Firefox and Safari. The <robo-folk> web component works in plain HTML, Vue, Svelte and React 19; robofolks/react supports React 18 and 19 with server rendering; the core functions run in Node, Deno, Bun and workers; and there is a CLI."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is it accessible?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Each robot is an image to assistive technology, labelled “Robot avatar, working” and so on, and you can set aria-label yourself. Robots hold still when the reader asks for reduced motion."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use it commercially?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. robofolks is MIT licensed, with no attribution required."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
 <header>
   <div class="wrap masthead">
-    <div class="wordmark">robo<span>folks</span></div>
-    <nav class="links">
+    <a class="wordmark" href="./" aria-label="robofolks home">robo<span>folks</span></a>
+    <nav class="links" aria-label="Primary">
       <a href="#roster">Roster</a>
       <a href="#use">Use it</a>
+      <a href="#faq">FAQ</a>
       <a href="https://github.com/kevingoenadibrata/robofolks">GitHub</a>
       <a href="https://www.npmjs.com/package/robofolks">npm</a>
     </nav>
@@ -197,12 +365,13 @@
 
 <main>
   <div class="wrap hero">
-    <p class="eyebrow">Seeded pixel avatars · no dependencies</p>
-    <h1>Every string gets a <em>robot</em>.</h1>
+    <p class="eyebrow">Animated pixel-robot avatars · no dependencies</p>
+    <h1>Give your agents a <em>face</em>.</h1>
     <p class="lede">
-      A username, an email, a project path — the same string always builds the same
-      robot, down to its antenna. They animate themselves in an SVG, with no
-      JavaScript needed to play it.
+      robofolks draws a pixel robot for any string — an agent's name, a username,
+      a project path — and animates it to show what that agent is doing: working,
+      waiting on you, or idle. The same string always builds the same robot, and
+      the animated SVG plays with no JavaScript.
     </p>
 
     <div class="bench">
@@ -237,13 +406,55 @@
     </div>
   </div>
 
+  <section id="about">
+    <div class="wrap">
+      <div class="head">
+        <h2>robofolks at a glance</h2>
+        <p>An MIT-licensed JavaScript library for avatars that show state, built for AI agent dashboards and useful anywhere a name needs a face.</p>
+      </div>
+      <dl class="facts">
+        <div><dt>Robots</dt><dd>567 combinations: 7 paints, 3 builds, 3 antennas, 3 ear types, 3 chest panels</dd></div>
+        <div><dt>States</dt><dd>Working, needs you, idle, and walking front, back, left or right</dd></div>
+        <div><dt>Formats</dt><dd>Animated SVG, PNG, 4×4 sprite sheet, web component, React component, CLI</dd></div>
+        <div><dt>Size</dt><dd>No dependencies, about 25 kB packed; an animated SVG is 1–3 kB gzipped</dd></div>
+        <div><dt>Runs in</dt><dd>Chrome, Firefox, Safari, Node, Deno, Bun and workers; TypeScript types included</dd></div>
+        <div><dt>Stability</dt><dd>A string keeps its robot for the life of a major version, pinned by snapshot tests</dd></div>
+      </dl>
+    </div>
+  </section>
+
   <section id="roster">
     <div class="wrap">
       <div class="head">
         <h2>One seed each</h2>
         <p>Every robot below is drawn from the label under it. Pick one to load it above.</p>
       </div>
-      <div class="roster" id="roster-grid"></div>
+      <div class="roster" id="roster-grid">
+        <button type="button" data-seed="nova"><robo-folk seed="nova" state="active" motion="css"></robo-folk><span>nova</span></button>
+        <button type="button" data-seed="grace"><robo-folk seed="grace" state="active" motion="css"></robo-folk><span>grace</span></button>
+        <button type="button" data-seed="linus"><robo-folk seed="linus" state="active" motion="css"></robo-folk><span>linus</span></button>
+        <button type="button" data-seed="margaret"><robo-folk seed="margaret" state="active" motion="css"></robo-folk><span>margaret</span></button>
+        <button type="button" data-seed="octocat"><robo-folk seed="octocat" state="active" motion="css"></robo-folk><span>octocat</span></button>
+        <button type="button" data-seed="kevingo"><robo-folk seed="kevingo" state="active" motion="css"></robo-folk><span>kevingo</span></button>
+        <button type="button" data-seed="you@example.com"><robo-folk seed="you@example.com" state="active" motion="css"></robo-folk><span>you@example.com</span></button>
+        <button type="button" data-seed="~/Projects/agenthub"><robo-folk seed="~/Projects/agenthub" state="active" motion="css"></robo-folk><span>~/Projects/agenthub</span></button>
+        <button type="button" data-seed="deploy-bot"><robo-folk seed="deploy-bot" state="active" motion="css"></robo-folk><span>deploy-bot</span></button>
+        <button type="button" data-seed="nightly-build"><robo-folk seed="nightly-build" state="active" motion="css"></robo-folk><span>nightly-build</span></button>
+        <button type="button" data-seed="main"><robo-folk seed="main" state="active" motion="css"></robo-folk><span>main</span></button>
+        <button type="button" data-seed="feature/login"><robo-folk seed="feature/login" state="active" motion="css"></robo-folk><span>feature/login</span></button>
+        <button type="button" data-seed="staging"><robo-folk seed="staging" state="active" motion="css"></robo-folk><span>staging</span></button>
+        <button type="button" data-seed="prod"><robo-folk seed="prod" state="active" motion="css"></robo-folk><span>prod</span></button>
+        <button type="button" data-seed="qa-runner"><robo-folk seed="qa-runner" state="active" motion="css"></robo-folk><span>qa-runner</span></button>
+        <button type="button" data-seed="docs-site"><robo-folk seed="docs-site" state="active" motion="css"></robo-folk><span>docs-site</span></button>
+        <button type="button" data-seed="alex"><robo-folk seed="alex" state="active" motion="css"></robo-folk><span>alex</span></button>
+        <button type="button" data-seed="sam"><robo-folk seed="sam" state="active" motion="css"></robo-folk><span>sam</span></button>
+        <button type="button" data-seed="jordan"><robo-folk seed="jordan" state="active" motion="css"></robo-folk><span>jordan</span></button>
+        <button type="button" data-seed="priya"><robo-folk seed="priya" state="active" motion="css"></robo-folk><span>priya</span></button>
+        <button type="button" data-seed="kenji"><robo-folk seed="kenji" state="active" motion="css"></robo-folk><span>kenji</span></button>
+        <button type="button" data-seed="noor"><robo-folk seed="noor" state="active" motion="css"></robo-folk><span>noor</span></button>
+        <button type="button" data-seed="mateo"><robo-folk seed="mateo" state="active" motion="css"></robo-folk><span>mateo</span></button>
+        <button type="button" data-seed="wren"><robo-folk seed="wren" state="active" motion="css"></robo-folk><span>wren</span></button>
+      </div>
     </div>
   </section>
 
@@ -253,7 +464,13 @@
         <h2>Four things a robot does</h2>
         <p>Working, needing you, dozing — and walking in any of four directions, four frames each.</p>
       </div>
-      <div class="walks" id="walks"></div>
+      <div class="walks" id="walks">
+        <figure><robo-folk seed="grace" view="front"></robo-folk><figcaption>walking front</figcaption></figure>
+        <figure><robo-folk seed="grace" view="back"></robo-folk><figcaption>walking back</figcaption></figure>
+        <figure><robo-folk seed="grace" view="left"></robo-folk><figcaption>walking left</figcaption></figure>
+        <figure><robo-folk seed="grace" view="right"></robo-folk><figcaption>walking right</figcaption></figure>
+        <figure><robo-folk seed="grace" state="needs"></robo-folk><figcaption>needs you</figcaption></figure>
+      </div>
     </div>
   </section>
 
@@ -263,7 +480,23 @@
         <h2>Three builds, and the bits</h2>
         <p>The seed picks a build, antenna, ears and chest panel. Set any of them by hand when you'd rather choose.</p>
       </div>
-      <div class="parts" id="parts-grid"></div>
+      <div class="parts" id="parts-grid">
+        <div>
+          <robo-folk seed="nova" build="walker" chest="lights" state="active"></robo-folk>
+          <b>walker</b>
+          <small>chest: Three lights</small>
+        </div>
+        <div>
+          <robo-folk seed="nova" build="tank" chest="grille" state="active"></robo-folk>
+          <b>tank</b>
+          <small>chest: Grille</small>
+        </div>
+        <div>
+          <robo-folk seed="nova" build="ball" chest="core" state="active"></robo-folk>
+          <b>ball</b>
+          <small>chest: Single light</small>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -310,10 +543,53 @@ folkAnimatedSvg(<span class="s">'kevingo'</span>, <span class="s">'needs'</span>
       </div>
     </div>
   </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="head">
+        <h2>Questions</h2>
+        <p>The ones that come up most. More detail in the <a href="https://github.com/kevingoenadibrata/robofolks#readme">README</a>.</p>
+      </div>
+      <div class="faq">
+        <details>
+          <summary><h3>What is robofolks?</h3></summary>
+          <p>robofolks is a free, open-source JavaScript library that draws animated pixel-robot avatars. Give it any string, such as an agent's name, a username or a project path, and it always draws the same robot for it. Each robot can show a state (working, needs you, idle) or walk in four directions.</p>
+        </details>
+        <details>
+          <summary><h3>How is it different from DiceBear or an identicon?</h3></summary>
+          <p>Identicons and static avatar sets like DiceBear answer “which account is this.” robofolks answers “what is this thing doing right now”: the robot animates to show whether an agent is working, blocked on you, or idle. It also exports PNGs and game-ready sprite sheets, and has no dependencies. If you only need a static robot, DiceBear is a good choice.</p>
+        </details>
+        <details>
+          <summary><h3>How many different robots are there?</h3></summary>
+          <p>567: 7 paints × 3 builds (walker, tank, ball) × 3 antennas × 3 ear types × 3 chest panels. It's a hand-drawn pixel set rather than a parametric face generator, so a dashboard of twenty agents won't repeat in practice, and the animated states carry most of the recognition.</p>
+        </details>
+        <details>
+          <summary><h3>Does the same string always get the same robot?</h3></summary>
+          <p>Yes, for the life of a major version. Which robot 50 seeds pick, and every combination of parts, are pinned by snapshot tests, so any change to how a robot looks ships as a breaking change.</p>
+        </details>
+        <details>
+          <summary><h3>Do the animations need JavaScript?</h3></summary>
+          <p>No. <code>folkAnimatedSvg</code> returns a self-contained SVG animated with CSS keyframes, so it plays in an <code>&lt;img&gt;</code> tag, a GitHub README or documentation. Each one is 1–3 kB gzipped.</p>
+        </details>
+        <details>
+          <summary><h3>Which browsers and frameworks does it work with?</h3></summary>
+          <p>Chrome, Firefox and Safari. The <code>&lt;robo-folk&gt;</code> web component works in plain HTML, Vue, Svelte and React 19; <code>robofolks/react</code> supports React 18 and 19 with server rendering; the core functions run in Node, Deno, Bun and workers; and there is a CLI.</p>
+        </details>
+        <details>
+          <summary><h3>Is it accessible?</h3></summary>
+          <p>Each robot is an image to assistive technology, labelled “Robot avatar, working” and so on, and you can set <code>aria-label</code> yourself. Robots hold still when the reader asks for reduced motion.</p>
+        </details>
+        <details>
+          <summary><h3>Can I use it commercially?</h3></summary>
+          <p>Yes. robofolks is MIT licensed, with no attribution required.</p>
+        </details>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer class="wrap">
-  <span>MIT · built for <a href="https://github.com/kevingoenadibrata/robofolks">agent dashboards</a>, useful anywhere</span>
+  <span>MIT · made by <a href="https://github.com/kevingoenadibrata">Kevin Goenadibrata</a> · built for agent dashboards, useful anywhere</span>
   <span>Robots hold still when you ask for reduced motion.</span>
 </footer>
 
@@ -406,43 +682,14 @@ folkAnimatedSvg(<span class="s">'kevingo'</span>, <span class="s">'needs'</span>
     showSpec();
   });
 
-  // The roster: real-looking seeds, so the point lands.
-  const SEEDS = [
-    'nova', 'grace', 'linus', 'margaret', 'octocat', 'kevingo',
-    'you@example.com', '~/Projects/agenthub', 'deploy-bot', 'nightly-build',
-    'main', 'feature/login', 'staging', 'prod', 'qa-runner', 'docs-site',
-    'alex', 'sam', 'jordan', 'priya', 'kenji', 'noor', 'mateo', 'wren',
-  ];
-  const roster = document.getElementById('roster-grid');
-  roster.append(...SEEDS.map((seed) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.innerHTML = `<robo-folk seed="${seed.replaceAll('"', '&quot;')}" state="active" motion="css"></robo-folk><span>${seed.replaceAll('<', '&lt;')}</span>`;
-    button.addEventListener('click', () => {
-      setSeed(seed);
-      document.querySelector('.bench').scrollIntoView({ block: 'center' });
-    });
-    return button;
-  }));
-
-  // Walk cycle, one per direction.
-  const walks = document.getElementById('walks');
-  walks.innerHTML = ['front', 'back', 'left', 'right']
-    .map((view) => `<figure><robo-folk seed="grace" view="${view}"></robo-folk><figcaption>walking ${view}</figcaption></figure>`)
-    .join('') + `<figure><robo-folk seed="grace" state="needs"></robo-folk><figcaption>needs you</figcaption></figure>`;
-
-  // The three builds, each wearing a different chest panel.
-  const parts = document.getElementById('parts-grid');
-  parts.innerHTML = [
-    ['walker', 'lights', 'Three lights'],
-    ['tank', 'grille', 'Grille'],
-    ['ball', 'core', 'Single light'],
-  ].map(([build, chest, label]) => `
-    <div>
-      <robo-folk seed="nova" build="${build}" chest="${chest}" state="active"></robo-folk>
-      <b>${build}</b>
-      <small>chest: ${label}</small>
-    </div>`).join('');
+  // The roster, walk cycles and builds are static markup, so crawlers that
+  // don't run scripts still read them; here they only get their behaviour.
+  document.getElementById('roster-grid').addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-seed]');
+    if (!button) return;
+    setSeed(button.dataset.seed);
+    document.querySelector('.bench').scrollIntoView({ block: 'center' });
+  });
 
   showSpec();
 </script>

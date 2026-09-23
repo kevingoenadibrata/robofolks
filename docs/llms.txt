@@ -1,0 +1,29 @@
+# robofolks
+
+> Animated pixel-robot avatars for AI agents and bots, in one dependency-free, MIT-licensed JavaScript package. Any string (an agent's name, a username, a project path) always draws the same robot, and the robot animates to show what that agent is doing: working (`active`), needs you (`needs`), or idle (`waiting`), or walking front, back, left or right.
+
+- 567 robots: 7 paints × 3 builds (walker, tank, ball) × 3 antennas × 3 ear types × 3 chest panels.
+- Animated SVGs play with CSS keyframes and need no JavaScript, so they work in `<img>`, READMEs and docs. 1–3 kB gzipped each.
+- Also a `<robo-folk>` web component, a React component (React 18 and 19, server rendering), PNG frames, 4×4 sprite sheets and a CLI.
+- No dependencies, about 25 kB packed, TypeScript types included. Runs in Chrome, Firefox, Safari, Node, Deno, Bun and workers.
+- A string keeps its robot for the life of a major version; seeds and every part combination are pinned by snapshot tests.
+- Accessible: each robot is labelled for assistive technology ("Robot avatar, working"), and robots hold still under `prefers-reduced-motion`.
+- Install: `npm install robofolks`
+
+## Docs
+
+- [README](https://github.com/kevingoenadibrata/robofolks/blob/main/README.md): install, usage for every entry point, full API, CLI options and the stability promise
+- [Demo page](https://kevingoenadibrata.github.io/robofolks/): try any string and see every state
+- [Changelog](https://github.com/kevingoenadibrata/robofolks/blob/main/CHANGELOG.md)
+
+## Quick examples
+
+- [Web component](https://github.com/kevingoenadibrata/robofolks#use): `import 'robofolks/element'`, then `<robo-folk seed="kevingo" state="active"></robo-folk>`
+- [React](https://github.com/kevingoenadibrata/robofolks#robofolksreact): `import { RoboFolk } from 'robofolks/react'`, then `<RoboFolk seed="kevingo" state="active" size={48} />`
+- [Animated SVG string](https://github.com/kevingoenadibrata/robofolks#robofolks): `folkAnimatedSvg('kevingo', 'needs')` from `robofolks`
+- [CLI](https://github.com/kevingoenadibrata/robofolks#command-line): `npx robofolks svg kevingo --state active -o kevingo.svg`
+
+## Optional
+
+- [Source code](https://github.com/kevingoenadibrata/robofolks)
+- [npm package](https://www.npmjs.com/package/robofolks)
