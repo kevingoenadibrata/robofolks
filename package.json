@@ -51,7 +51,7 @@
     "blueprint": "node blueprint/v2/prototype.mjs"
   },
   "bin": {
-    "robofolks": "./src/cli.js"
+    "robofolks": "src/cli.js"
   },
   "peerDependencies": {
     "react": ">=18"
