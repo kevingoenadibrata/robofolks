@@ -1,6 +1,6 @@
 {
   "name": "robofolks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Seeded, animated pixel-robot avatars drawn as SVG or onto a canvas",
   "license": "MIT",
   "author": "Kevin Goenadibrata",
