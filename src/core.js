@@ -447,8 +447,12 @@ export function eachFolkRect(frame, colors, fn) {
       const c = cells[x];
       let end = x;
       while (end + 1 < cells.length && cells[end + 1] === c) end++;
-      // A shut eye is a thin slit at the bottom of the eye pixel.
-      if (c === 'l') fn(x, y * 2 + frame.dy + 1.3, end - x + 1, 0.7, colors[c]);
+      // A shut eye is a thin slit at the bottom of the eye pixel, on the visor
+      // colour so the background doesn't show through the rest of the pixel.
+      if (c === 'l') {
+        fn(x, y * 2 + frame.dy, end - x + 1, 2, colors.v);
+        fn(x, y * 2 + frame.dy + 1.3, end - x + 1, 0.7, colors[c]);
+      }
       else if (c !== '.') fn(x, y * 2 + frame.dy, end - x + 1, 2, colors[c]);
       x = end + 1;
     }
