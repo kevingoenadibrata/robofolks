@@ -31,8 +31,12 @@ fidelity: defaults match core exactly (dome antenna rework aside)
 
 That check renders the prototype with every default (`box` head, `wide` eyes,
 `line` mouth, `green` eyes) and compares it against `folkFrame` from the real
-package — 6 trait sets × 3 states × 30 ticks, grid and `dy`. If it reports
-mismatching frames, a patch in `prototype.mjs` has drifted from the package.
+package — 12 trait sets × 3 states × 30 ticks, grid and `dy`. The sets cover
+every antenna, ear and chest option the package already has, on every build,
+because the prototype now draws all three itself (see below): they are what
+says its tables still agree with core, down to the ball's sliding markings and
+the pixels a raised claw takes off an ear. If it reports mismatching frames, a
+patch in `prototype.mjs` has drifted from the package.
 **Fix the patch, not the check.** It caught three real bugs during design
 (eyes dropped where they overlapped the head's glare pixels, the look-around
 offset mirrored the wrong way so the eyes crossed, and the head repaint wiping
@@ -50,32 +54,41 @@ rows 0–1 are excluded for that one case.
 | eyes | wide, dot, slant, visor | new axis |
 | mouth | line, zigzag, grin, none | new axis |
 | eye colour | green, aqua, sand | new axis |
-| antenna | +none, dish, bulb, horns, propeller | **not prototyped yet** |
-| ears | +cup, plug, ring | **not prototyped yet** |
-| chest | +none, two, slot, screen, stripe | **not prototyped yet** |
+| antenna | +none, bulb, horns, bar | four kept; `dish` and `propeller` dropped |
+| ears | +plug, floating | two kept; `cup` and `ring` dropped |
+| chest | +none, two, slot, screen, stripe | all five kept |
 
-Total if all of it lands: **2,064,384** robots, against 567 today.
+Total if all of it lands: **1,505,280** robots, against 567 today.
 
 ## How the prototype works
 
 It never redraws a robot from scratch. It calls `folkFrame` from the package,
-then patches the returned grid. Four mechanisms are worth knowing, because
+then patches the returned grid. Five mechanisms are worth knowing, because
 they are what an implementation in `src/core.js` would need to reproduce:
 
 - **Head shape is a per-row span table** for rows 2–9 (`HEADS`). The screen is
   inset 2 from the outline and clamped to x 9–22, so it follows a tapering
-  head instead of being fixed. Ears re-anchor to the outline at their row.
-  `paintHead` clears exactly the cells today's head and ears occupy — not a
-  blanket band — so raised arms and the ball's rim survive.
+  head instead of being fixed. `paintHead` clears exactly the cells today's
+  head occupies — not a blanket band — so raised arms and the ball's rim
+  survive.
 - **Mouths use half-height pixels.** Two new grid chars, `T` (top half of the
   cell) and `U` (bottom half), the same trick `eachFolkRect` already uses for
   the shut eyelid `l`. This keeps every mouth on row 7, clear of the eyes,
-  which share the mouth's colour. Implementing this means one new case in
-  `eachFolkRect`, which every output path (SVG, animated SVG, PNG, sprite
-  sheet) then gets for free.
+  which share the mouth's colour. The `bar` antenna and the `floating` ear use
+  the light's two halves to round themselves off, so the new case in
+  `eachFolkRect` is one table of char → colour and half — and every output
+  path (SVG, animated SVG, PNG, sprite sheet) then gets all four for free.
 - **The ball needs help.** A narrower head exposes sphere that `sphere()` only
   fills where cells are empty, and the seam under the head (row 10) has to
   follow the head's bottom span. `ballSlide` already takes a `seam` argument.
+- **Antenna, ears and chest are drawn here, from one table each.** Core is
+  asked for a robot with no antenna and no ears and its chest panel is
+  repainted, so the three options the package already has go through the same
+  table as the eleven new ones — which is what the fidelity check pins down.
+  Ears are placed *k* columns outboard of the head outline at their row, so
+  they re-anchor on a narrower head, and they fill only empty cells: core
+  draws the ears before the arms, so a raised claw or hand covers the ear it
+  overlaps, and patching a finished frame has to reproduce that.
 - **`float` is a new build**: pod rows 10–12 at x 11–20 flush to the head (no
   neck), skirt row 13, plume rows 14–15, arms at x 10 / x 21, and a constant
   bob instead of a walk cycle.
@@ -89,19 +102,19 @@ documented trick for adding options while keeping most seeds pixel-identical.
 
 Open work, roughly in order:
 
-1. **Prototype section 1** — the antenna, ears and chest additions listed in
-   `plan.md`. They are specified but have never been drawn, so they are the
-   least certain part of the plan.
-2. **Side and back views.** Everything approved so far has only been designed
+1. **Side and back views.** Everything approved so far has only been designed
    from the front, which was a deliberate constraint. But `head('side')` is a
    separate branch in `core.js`, so `round`, `cone` and `taper` need matching
-   profiles or the left/right sprites quietly stay boxy. `float` needs a whole
+   profiles or the left/right sprites quietly stay boxy. The four new antenna
+   options and two new ears need side forms for the same reason — `head`'s
+   side branch draws its own, narrower versions of both, and `floating` needs
+   its gap kept there too. `float` needs a whole
    side/back body and a drift cycle instead of a stride. **This is the largest
    unscoped piece of work in the plan.**
-3. **One open question:** on `float` the chest panel sits on the pod's last
+2. **One open question:** on `float` the chest panel sits on the pod's last
    row rather than centred, because the pod is three rows. Moving it to row 11
    for that build is a one-line change if it reads better.
-4. **Then implement**, in the order `plan.md` suggests: eyes first (the seed
+3. **Then implement**, in the order `plan.md` suggests: eyes first (the seed
    draw for it already exists in `seededTraits`), then head shape, then float.
 
 Two rules constrained every decision here, and should constrain new ones:

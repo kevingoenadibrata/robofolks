@@ -19,19 +19,73 @@ so everything below lives there. Grid coordinates refer to the 32×16 grid in
 | Option | Drawing |
 | --- | --- |
 | `none` | Bare head. `ears` already has `none`; this fills the gap. |
-| `dish` | Shallow bowl on a stem: row 0 x 13–18 `h`, row 1 x 15–16 `#`. |
 | `bulb` | One fat light: row 0 x 14–17 `a`, row 1 x 15–16 `#`. `dome` is the wide version, this is the tall one. |
-| `horns` | Two `d` nubs on the head's outer corners: row 1 x 8 and x 23. Reads differently from `twin` because it's on the corners, not inboard. |
-| `propeller` | Row 0 x 12–19 `h` on a `#` stem. In `active`, alternate x 12–19 and x 14–17 so it looks like it spins. |
+| `horns` | A small `d` triangle on each outer corner of the crown, tip outboard: row 1 on the corner and the cell inboard of it, row 0 on the corner alone. On a box head that's x 8–9 and x 22–23. Reads differently from `twin` because it's on the corners, not inboard. |
+| `bar` | One `a` light the full width of the crown, row 1 — x 8–23 on a box head. `dome` unclamped: a light bar rather than a lamp, and the only option as wide as the head. Its two end cells are half-height (`A`, see Mouth), so the top corners come off and the ends curve down onto the crown. It never goes narrower than x 10–21, so it stays a bar on a crown as small as `cone`'s. |
 
-### Ears (rows 4–7 at x 5–6, mirrored via `both`)
+Prototyped; all four kept. `dome`, `horns` and `bar` follow the crown so they
+stay seated when the head narrows, while the centred ones don't — which is
+what leaves `twin` standing clear of `cone`'s point, and what sets `horns`
+flanking it. `bulb` and `mast` are the same silhouette and differ only in the
+light's width, 4 against 2; they read apart on a robot, but don't narrow
+either of them. `horns` is the only antenna with no light in it, so it is the
+one that stays quiet while the others blink.
+
+Three things `bar` brings with it. Its chamfer needs a half-height pixel in
+the antenna light's colour, so it shares the mechanism the mouths need and
+pushes `eachFolkRect`'s new case to read its colour from a table rather than
+assume the mouth's. It is the largest lit surface on a robot, so it is also
+the most conspicuous when the light is off — a dull slab across the crown
+while idle, which reads as switched off and is worth keeping. And it follows the
+crown only down to a floor of x 10–21. Without the floor, `cone`'s six-cell
+crown gave x 13–18 against `dome`'s x 14–17 — a pixel apart each side, the
+same lamp twice. At the floor it overhangs the point instead, cantilevered
+over the cone's shoulders: `cone` is the one head where the bar doesn't sit
+flush, and the one where it has to be wider than what it stands on.
+
+Prototyped and dropped:
+
+- **`dish`** — a shallow bowl on a stem, row 0 x 13–18 `h` over row 1 x 15–16
+  `#`. Cut on review.
+- **`propeller`** — row 0 x 12–19 `h` on the same stem, alternating to
+  x 14–17 every tick while working. Cut on review. It was the only part in
+  this plan whose *shape* moved tick to tick, so dropping it leaves every
+  antenna a still and `paintAntenna` needs no state.
+
+### Ears (rows 4–7 at x 4–6, mirrored via `both`)
 
 | Option | Drawing |
 | --- | --- |
-| `cup` | Headphones: rows 4–7 x 5–6 `d`, `a` at rows 5–6 x 6. Bigger than `bolt`, lights up the same way. |
-| `plug` | A peg straight out: rows 5–6 x 4–6 `#`, x 3 `d`. |
-| `ring` | Hollow handle: rows 4 and 7 x 5–6 `d`, rows 5–6 x 4 `d`. |
+| `plug` | A T on its side: a stem at rows 5–6 x 5–6 `#`, and a flange standing on its end at rows 4–7 x 4 `d`. |
+| `floating` | A half-circle that doesn't touch, and all of it the light `a`: the flat side at rows 4–7 x 5, the curve at x 4 — rows 5–6 full, plus row 4's bottom half and row 7's top half — and x 6, the column against the head, deliberately left empty. |
 
+Prototyped; both kept. Three things the drawing settled:
+
+- Ears are placed *k* columns outboard of the head outline at their row, not
+  at fixed columns, so they step in with `taper`'s jaw instead of drifting
+  off. `floating` leaves *k* 1 empty, so its gap survives every head shape.
+- The ears go on before the arms, so a raised limb covers the ear it overlaps:
+  a tank's claw (rows 6–7, x 3–5) cuts into both of these while it waves.
+  That reads as the arm passing in front and needs no special case, but it
+  does mean the new ears are at their clearest on a walker.
+- `floating` is the only part in the plan not attached to the body, and the
+  only ear that needs half-height pixels: its curve is two half cells of the
+  light. It costs nothing to draw from the front, but the side and back views
+  have to keep the gap or it collapses into another fin. A tapered version was
+  drawn first and dropped — pointing outward it is `fin`'s silhouette exactly,
+  one column further out.
+- Being all light, `floating` is the largest lit area on a robot after the
+  `bar` antenna, and it blinks on the same cycle: a pair of pods that glow
+  aqua working, flash yellow on `needs`, and go dark grey on the off beat.
+  `bolt` is the same signal at two cells; this is the loud version of it.
+
+Prototyped and dropped:
+
+- **`cup`** — headphones: rows 4–7 x 5–6 `d` with an `a` light at rows 5–6
+  x 6. Cut on review. Drawn, it read as `bolt` inverted and twice as tall,
+  because the light sits on the inboard column.
+- **`ring`** — a hollow handle: rows 4 and 7 x 5–6 `d`, rows 5–6 x 4 `d`.
+  Cut on review.
 ### Chest (row 12, x 12–19; the ball gets a `MARKING` entry or a special case like `grille`)
 
 | Option | Front | Ball marking |
@@ -42,6 +96,20 @@ so everything below lives there. Grid coordinates refer to the 32×16 grid in
 | `screen` | A second little display: x 13–18 `v`, `g` glare at x 13. | Same stamp as `core` but `v` inside. |
 | `stripe` | A highlight band: x 12–19 `h`. | A full `h` ring round the waist (slides nicely). |
 
+Prototyped; all five kept. The panel is the same row on every build, so each
+option needed no per-build case — the ball is the only one that needs its own
+form, and `stripe` is a ring there rather than a stamp because a uniform band
+has nothing to slide.
+
+The one cost is the chest lights, which carry the working chase and the
+`needs` flash. `none`, `slot`, `screen` and `stripe` have none, so those
+robots sit both out, and `two` goes dark on the middle beat of the three-step
+chase. The `needs` state still has yellow eyes and the `!`, so nothing is
+lost there. Working is the case to watch: paired with `mouth: none`, which
+talks with the chest lights only, the robot has no talking cue at all. Five
+of the eight panels have no lights — `grille` already doesn't today — so that
+is 5 in 32 of the space. If it should never happen, the cheapest fix is for
+`mouth` to fall back to `line` when the chest has no lights.
 ## 2. New variations
 
 ### Eyes — do this one first
@@ -192,7 +260,10 @@ Today the mouth is only the `active` talking strip on row 7.
 Mouth and eyes share a colour, so anything on row 6 reads as attached to the
 eyes. All shapes therefore stay on row 7 and use **half-height pixels**: two
 new grid chars, `T` (top half of the cell) and `U` (bottom half), drawn by
-`eachFolkRect` the same way the shut eyelid `l` already is.
+`eachFolkRect` the same way the shut eyelid `l` already is. The `bar` antenna
+and the `floating` ear add the light's two halves, so the case is one table of
+char → colour and half — four chars — rather than one hard-wired case per
+part.
 
 - `line` — today: x 14–17, narrowing to 15–16 while talking.
 - `zigzag` — x 12–19 alternating `T`/`U`; talking flips the parity so the
@@ -222,22 +293,22 @@ new grid chars, `T` (top half of the cell) and `U` (bottom half), drawn by
 | --- | ---: | --- |
 | body | 7 | |
 | build | 4 | new: `float` |
-| antenna | 8 | 3 + `none`, `dish`, `bulb`, `horns`, `propeller` (`dome` reworked) |
-| ears | 6 | 3 + `cup`, `plug`, `ring` |
+| antenna | 7 | 3 + `none`, `bulb`, `horns`, `bar` (`dome` reworked) |
+| ears | 5 | 3 + `plug`, `floating` |
 | chest | 8 | 3 + `none`, `two`, `slot`, `screen`, `stripe` |
 | eyes | 4 | new |
 | eyeColor | 3 | new |
 | head | 4 | new |
 | mouth | 4 | new |
-| **Total** | **2,064,384** | |
+| **Total** | **1,505,280** | |
 
-That's about **3,640×** today's count.
+That's about **2,650×** today's count.
 
 Each section on its own, on top of today's 567:
 
 | Only doing… | Total |
 | --- | ---: |
-| Section 1 (expanded lists) | 7 × 3 × 8 × 6 × 8 = 8,064 |
+| Section 1 (expanded lists) | 7 × 3 × 7 × 5 × 8 = 5,880 |
 | The `float` build alone | 567 × 4 / 3 = 756 |
 | Section 2 (new parts) | 567 × 4 × 3 × 4 × 4 = 108,864 |
 
@@ -251,7 +322,7 @@ Per [Stability](README.md#stability), both routes are a major bump:
 
 To keep *most* seeds pixel-for-pixel identical when adding an option, append
 a **new** draw at the end of `seededTraits` and only override when it lands
-(e.g. `if (r() < 1 / n) traits.antenna = 'dish'`) — the same trick the
+(e.g. `if (r() < 1 / n) traits.antenna = 'bulb'`) — the same trick the
 `build` comment describes. Then only ~1/n of seeds change.
 
 ## Suggested order
@@ -263,6 +334,6 @@ a **new** draw at the end of `seededTraits` and only override when it lands
    and drift cycle, so it is the largest single piece of work here.
 2. Eye colour — a few lines in `folkColors`.
 3. Mouth.
-4. Chest `none`/`stripe`/`slot`, antenna `none`/`dish`/`bulb`, ears `cup` —
-   the easy list additions.
-5. Antenna `propeller`/`horns`, ears `plug`/`ring`, chest `two`/`screen`.
+4. Chest `none`/`stripe`/`slot`, antenna `none`/`bulb`/`bar` — the easy list
+   additions.
+5. Antenna `horns`, ears `plug`/`floating`, chest `two`/`screen`.

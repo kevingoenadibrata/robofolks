@@ -30,13 +30,124 @@ const BOX = HEADS.box;
 const SCREEN_ROWS = [4, 7], SCREEN_X = [9, 22];
 const screenAt = (spans, y) => { const [x0, x1] = spans[y - 2]; return [Math.max(x0 + 2, SCREEN_X[0]), Math.min(x1 - 2, SCREEN_X[1])]; };
 
-const paintHead = (g, spans, traits) => {
-  // Clear exactly the cells today's head and ears occupy -- not a blanket
-  // band -- so arms raised into rows 7-8 and the ball's rim survive.
+/* ---------------- antenna (rows 0-1) ---------------- */
+// Nothing else in a frame reaches rows 0-1, so the band is cleared and drawn
+// from scratch. `dome` and `horns` follow the crown so they stay seated on a
+// narrow head; the rest stay centred, which is what leaves `twin` standing
+// clear of a cone's point -- a pair of feelers, kept deliberately. Nothing in
+// here animates: the antenna light blinks, but the shape is the same on every
+// tick, so `paintAntenna` needs no state.
+const ANTENNAS = {
+  mast: (g) => { for (let x = 15; x <= 16; x++) { g[0][x] = 'a'; g[1][x] = '#'; } },
+  twin: (g) => { for (const x of [10, 21]) { g[0][x] = 'a'; g[1][x] = '#'; } },
+  // reworked: no stem plate, the light sits straight on the crown
+  dome: (g, spans) => { const [x0, x1] = spans[0]; for (let x = Math.max(14, x0 + 1); x <= Math.min(17, x1 - 1); x++) g[1][x] = 'a'; },
+  none: () => {},
+  bulb: (g) => { for (let x = 14; x <= 17; x++) g[0][x] = 'a'; for (let x = 15; x <= 16; x++) g[1][x] = '#'; },
+  // a small triangle on each outer corner of the crown, tip outboard: two
+  // cells of base on row 1, one on row 0 over the corner itself
+  horns: (g, spans) => { const [x0, x1] = spans[0]; g[0][x0] = 'd'; g[0][x1] = 'd'; g[1][x0] = 'd'; g[1][x0 + 1] = 'd'; g[1][x1] = 'd'; g[1][x1 - 1] = 'd'; },
+  // one light the whole width of the crown: `dome` unclamped, a light bar.
+  // The end cells are half-height (`A`), so the bar's top corners come off
+  // and the ends curve down onto the crown. It never goes narrower than
+  // x 10-21: on a crown as small as `cone`'s it would otherwise collapse to
+  // four cells, which is `dome`.
+  bar: (g, spans) => {
+    const [x0, x1] = spans[0], a = Math.min(x0, 10), b = Math.max(x1, 21);
+    for (let x = a; x <= b; x++) g[1][x] = 'a';
+    g[1][a] = 'A'; g[1][b] = 'A';
+  },
+};
+const paintAntenna = (g, spans, name) => {
+  for (let y = 0; y <= 1; y++) g[y].fill('.');
+  ANTENNAS[name](g, spans);
+};
+
+/* ---------------- ears (rows 4-7, mirrored) ---------------- */
+// `put(row, k, char)` is k columns outboard of the head outline at that row,
+// on both sides, so an ear re-anchors on a narrower head instead of floating.
+// It only fills an empty cell: core draws the ears right after the head and
+// the arms after that, so a raised claw or hand covers the ear it overlaps,
+// and patching a finished frame has to reproduce that.
+const EARS = {
+  bolt: (put) => { for (const y of [5, 6]) { put(y, 1, 'd'); put(y, 2, 'a'); } },
+  fin: (put) => { for (let y = 4; y <= 7; y++) put(y, 1, 'd'); for (const y of [5, 6]) put(y, 2, 'd'); },
+  none: () => {},
+  // a T on its side: a short stem off the head, a flange standing on its end
+  plug: (put) => { for (const y of [5, 6]) { put(y, 1, '#'); put(y, 2, '#'); } for (let y = 4; y <= 7; y++) put(y, 3, 'd'); },
+  // A half-circle that never touches: k 1 is left empty, the flat side faces
+  // the head at k 2, and k 3 curves away -- half cells top and bottom (`A`,
+  // `B`) round it off. All of it is the light, so the pair glows and blinks
+  // with the antenna rather than reading as body. A taper pointing the other
+  // way was drawn first and dropped: it is `fin`'s silhouette exactly, one
+  // column further out.
+  floating: (put) => {
+    for (let y = 4; y <= 7; y++) put(y, 2, 'a');
+    put(4, 3, 'A'); put(5, 3, 'a'); put(6, 3, 'a'); put(7, 3, 'B');
+  },
+};
+const paintEars = (g, spans, name) => {
+  const put = (y, k, c) => {
+    const [x0, x1] = spans[y - 2];
+    for (const x of [x0 - k, x1 + k]) if (x >= 0 && x < 32 && g[y][x] === '.') g[y][x] = c;
+  };
+  EARS[name](put);
+};
+
+/* ---------------- chest panel (row 12, x 12-19) ---------------- */
+// One table for all eight options, used by every build: the walker's and
+// tank's panel, the float pod's last row, and -- as a marking that slides
+// round the waist -- the ball's. The three the package already has go
+// through it too, so the fidelity check pins the whole table down.
+const CHESTS = {
+  lights: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = 'v'; g[12][13] = '1'; g[12][15] = '2'; g[12][16] = '2'; g[12][18] = '3'; },
+  core: (g) => { for (let x = 14; x <= 17; x++) g[12][x] = 'v'; g[12][15] = '2'; g[12][16] = '2'; },
+  grille: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = x % 2 ? 'd' : 'v'; },
+  none: () => {},
+  two: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = 'v'; g[12][13] = '1'; g[12][18] = '3'; },
+  slot: (g) => { for (let x = 13; x <= 18; x++) g[12][x] = 'v'; g[12][12] = 'd'; g[12][19] = 'd'; },
+  screen: (g) => { for (let x = 13; x <= 18; x++) g[12][x] = 'v'; g[12][13] = 'g'; },
+  stripe: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = 'h'; },
+};
+// x 12-19 is interior body on every build (walker 9-22, tank 7-24, pod 11-20),
+// so the panel is repainted by clearing back to the base colour.
+const paintFrontChest = (g, chest) => { for (let x = 12; x <= 19; x++) g[12][x] = '#'; CHESTS[chest](g); };
+
+// The ball's waist. Rows 11-13 are repainted to bare sphere -- span, then the
+// four shaded cells sphere() puts there -- and the marking stamped back on.
+const WAIST = { 11: [5, 26], 12: [6, 25], 13: [7, 24] };
+const MARKING = {
+  lights: ['d1d2d3d'], core: ['ddddd', 'd222d', 'ddddd'], grille: null, none: null, stripe: null,
+  two: ['d1ddd3d'], slot: ['dddddd'], screen: ['ddddd', 'dvvvd', 'ddddd'],
+};
+const mod = (a, m) => ((a % m) + m) % m;
+const stamp = (g, rows, cx) => {
+  const top = Math.round(12 - (rows.length - 1) / 2);
+  rows.forEach((cells, i) => {
+    const left = Math.round(cx - (cells.length - 1) / 2);
+    [...cells].forEach((c, dx) => {
+      const y = top + i, x = left + dx, span = WAIST[y];
+      if (span && x >= span[0] && x <= span[1]) g[y][x] = c;
+    });
+  });
+};
+const ballChest = (g, chest, n) => {
+  for (const [y, [x0, x1]] of Object.entries(WAIST)) for (let x = x0; x <= x1; x++) g[y][x] = '#';
+  g[11][5] = 'h'; g[11][26] = 'd'; g[12][25] = 'd'; g[13][23] = 'd'; g[13][24] = 'd';
+  if (chest === 'stripe') { const [x0, x1] = WAIST[12]; for (let x = x0; x <= x1; x++) g[12][x] = 'h'; return; }
+  if (chest === 'grille') { const [x0, x1] = WAIST[12]; for (let x = x0 + 1; x < x1; x++) if (mod(x - n, 4) === 0) g[12][x] = 'd'; return; }
+  if (!MARKING[chest]) return;
+  // Panels and light strips slide a column a tick and repeat every 12, so the
+  // pattern comes back round in step with the grille's.
+  for (let cx = 15.5 + mod(n, 12) - 24; cx <= 38; cx += 12) stamp(g, MARKING[chest], cx);
+};
+
+const paintHead = (g, spans, o, build) => {
+  // Clear exactly the cells today's head occupies -- not a blanket band -- so
+  // arms raised into rows 7-8 and the ball's rim survive. The frame came from
+  // core with no antenna and no ears (see robot()), so there is nothing else
+  // to erase and every option is drawn here, at the outline it belongs to.
   BOX.forEach(([x0, x1], i) => { for (let x = x0; x <= x1; x++) g[i + 2][x] = '.'; });
-  const clearEar = (y, x) => { g[y][x] = '.'; g[y][mirror(x)] = '.'; };
-  if (traits.ears === 'bolt') for (const y of [5, 6]) { clearEar(y, 6); clearEar(y, 5); }
-  if (traits.ears === 'fin') { for (let y = 4; y <= 7; y++) clearEar(y, 6); clearEar(5, 5); clearEar(6, 5); }
   spans.forEach(([x0, x1], i) => {
     const y = i + 2;
     if (y === 2) { for (let x = x0; x <= x1; x++) g[y][x] = 'h'; return; }
@@ -48,17 +159,10 @@ const paintHead = (g, spans, traits) => {
   for (let y = SCREEN_ROWS[0]; y <= SCREEN_ROWS[1]; y++) { const [a, b] = screenAt(spans, y); for (let x = a; x <= b; x++) g[y][x] = 'v'; }
   for (const y of [4, 7]) { const [a, b] = screenAt(spans, y); g[y][a] = '#'; g[y][b] = '#'; }
   g[4][10] = 'g'; g[4][11] = 'g';
-  const edge = (y) => spans[y - 2];
-  if (traits.ears === 'bolt') for (const y of [5, 6]) { const [x0, x1] = edge(y); g[y][x0 - 1] = 'd'; g[y][x1 + 1] = 'd'; g[y][x0 - 2] = 'a'; g[y][x1 + 2] = 'a'; }
-  if (traits.ears === 'fin') for (let y = 4; y <= 7; y++) { const [x0, x1] = edge(y); g[y][x0 - 1] = 'd'; g[y][x1 + 1] = 'd'; if (y === 5 || y === 6) { g[y][x0 - 2] = 'd'; g[y][x1 + 2] = 'd'; } }
-  // dome antenna, reworked: no stem plate, light straight on the crown
-  if (traits.antenna === 'dome') {
-    for (let y = 0; y <= 1; y++) g[y].fill('.');
-    const [x0, x1] = spans[0];
-    for (let x = Math.max(14, x0 + 1); x <= Math.min(17, x1 - 1); x++) g[1][x] = 'a';
-  }
+  paintEars(g, spans, o.ears);
+  paintAntenna(g, spans, o.antenna);
   // ball: refill the sphere the head no longer covers, re-seat the seam
-  if (traits.build === 'ball') {
+  if (build === 'ball') {
     const SPHERE = { 5: [11,20], 6: [8,23], 7: [7,24], 8: [6,25], 9: [5,26], 10: [5,26] };
     for (let y = 5; y <= 9; y++) for (let x = SPHERE[y][0]; x <= SPHERE[y][1]; x++) if (g[y][x] === '.') g[y][x] = '#';
     g[8][6] = 'h'; g[9][5] = 'h'; g[9][6] = 'h';
@@ -99,6 +203,17 @@ const drawEyes = (g, shape, state, look = 0, spans = BOX) => {
   }
 };
 
+/* ---------------- half-height pixels ---------------- */
+// A char that fills half a cell: which colour it takes, and which half. They
+// are what rounds a corner off, on a grid whose cells are twice as tall as
+// they are wide. Implementing them means `eachFolkRect` grows a half-height
+// case that reads its colour from a table like this one, rather than the
+// single hard-wired eyelid case it has today.
+const HALVES = {
+  T: ['m', 0], U: ['m', 1], // mouth: top half, bottom half
+  A: ['a', 1], B: ['a', 0], // the light: bottom half, top half
+};
+
 /* ---------------- mouth (half-height pixels T/U) ---------------- */
 const strip = (g, x0, x1) => { for (let x = x0; x <= x1; x++) g[7][x] = 'm'; };
 const MOUTHS = {
@@ -124,16 +239,14 @@ const arm = (g, side, pose) => {
   if (pose === 'up') { put(11, 10, '#'); put(10, 9, '#'); put(9, 9, '#'); put(8, 9, 'd'); }
   if (pose === 'tuck') { put(11, 10, '#'); put(12, 10, 'd'); }
 };
-const floatBody = (g, traits, state, t) => {
+const floatBody = (g, o, state, t) => {
   for (let y = 10; y <= 15; y++) g[y].fill('.');
   for (const [y, [x0, x1]] of Object.entries(POD)) {
     g[y][x0] = 'h';
     for (let x = x0 + 1; x <= x1; x++) g[y][x] = '#';
     g[y][x1] = 'd';
   }
-  if (traits.chest === 'lights') { for (let x = 12; x <= 19; x++) g[12][x] = 'v'; g[12][13] = '1'; g[12][15] = '2'; g[12][16] = '2'; g[12][18] = '3'; }
-  if (traits.chest === 'core') { for (let x = 14; x <= 17; x++) g[12][x] = 'v'; g[12][15] = '2'; g[12][16] = '2'; }
-  if (traits.chest === 'grille') for (let x = 12; x <= 19; x++) g[12][x] = x % 2 ? 'd' : 'v';
+  paintFrontChest(g, o.chest); // the pod's last row is the chest panel, unchanged
   for (let x = 13; x <= 18; x++) g[13][x] = 'd'; // skirt: bottom of the body
   // plume: wide at the skirt, narrowing to a point
   const n = Math.floor(t / 2), on = state !== 'waiting' || t % 4 < 2;
@@ -141,22 +254,31 @@ const floatBody = (g, traits, state, t) => {
     for (let x = 14 - (n % 2); x <= 17 + (n % 2); x++) g[14][x] = 'a';
     for (let x = 15; x <= 16; x++) g[15][x] = 'a';
   }
-  if (state === 'active') { const step = n % 2; arm(g, -1, step ? 'out' : 'down'); arm(g, 1, step ? 'down' : 'out'); }
-  else if (state === 'needs') { arm(g, -1, 'up'); arm(g, 1, 'up'); }
-  else { arm(g, -1, 'tuck'); arm(g, 1, 'tuck'); }
-  return [0, -1, -2, -1][n % 4]; // always airborne: a bob instead of a walk
+  // The arms are returned rather than drawn: `up` reaches row 8, inside the
+  // band the head repaint clears, and core draws the arms after the head.
+  const poses = state === 'active' ? (n % 2 ? ['out', 'down'] : ['down', 'out'])
+    : state === 'needs' ? ['up', 'up'] : ['tuck', 'tuck'];
+  return { dy: [0, -1, -2, -1][n % 4], poses }; // always airborne: a bob instead of a walk
 };
 
 /* ---------------- assemble ---------------- */
 const DEFAULTS = { head: 'box', eyes: 'wide', mouth: 'line', eyeColor: 'green' };
+/* `opts` overrides any axis for one drawing; the three the package already
+   seeds -- antenna, ears, chest -- default to the trait. Core is asked for a
+   robot with no antenna and no ears, and its chest panel is repainted, so all
+   three lists go through this file's tables whatever the option is. */
 function robot(traits, state = 'active', tick = 1, opts = {}) {
-  const o = { ...DEFAULTS, ...opts };
-  const base = traits.build === 'float' ? { ...traits, build: 'walker' } : traits;
+  const o = { ...DEFAULTS, antenna: traits.antenna, ears: traits.ears, chest: traits.chest, ...opts };
+  const base = { ...traits, antenna: 'none', ears: 'none', build: traits.build === 'float' ? 'walker' : traits.build };
   const frame = folkFrame(base, state, tick);
   const g = frame.grid;
   const t = tick + (traits.phase ?? 0);
-  if (traits.build === 'float') frame.dy = floatBody(g, traits, state, t);
-  paintHead(g, HEADS[o.head], traits);
+  let poses = null;
+  if (traits.build === 'float') ({ dy: frame.dy, poses } = floatBody(g, o, state, t));
+  else if (base.build === 'ball') ballChest(g, o.chest, state === 'active' ? t : 0);
+  else paintFrontChest(g, o.chest);
+  paintHead(g, HEADS[o.head], o, base.build);
+  if (poses) { arm(g, -1, poses[0]); arm(g, 1, poses[1]); }
   const look = state === 'active' ? [0, 0, 1, 0, 0, -1][Math.floor(t / 6) % 6] : 0;
   const blink = state === 'active' && t % 26 === 0;
   drawEyes(g, o.eyes, blink ? 'waiting' : state, look, HEADS[o.head]);
@@ -168,10 +290,10 @@ function robot(traits, state = 'active', tick = 1, opts = {}) {
 
 
 const eachRect = (frame, colors, fn) => {
-  eachFolkRect({ ...frame, grid: frame.grid.map((r) => r.map((c) => ('TU'.includes(c) ? '.' : c))) }, colors, fn);
+  eachFolkRect({ ...frame, grid: frame.grid.map((r) => r.map((c) => (HALVES[c] ? '.' : c))) }, colors, fn);
   frame.grid.forEach((r, y) => r.forEach((c, x) => {
-    if (c === 'T') fn(x, y * 2 + frame.dy, 1, 1, colors.m);
-    if (c === 'U') fn(x, y * 2 + frame.dy + 1, 1, 1, colors.m);
+    const half = HALVES[c];
+    if (half) fn(x, y * 2 + frame.dy + half[1], 1, 1, colors[half[0]]);
   }));
 };
 const svgOf = ({ frame, colors }) => {
@@ -189,10 +311,21 @@ const FLOAT = W({ body: B(5), build: 'float', antenna: 'dome', ears: 'bolt', che
 
 /* Fidelity check: with every default (box head, wide eyes, line mouth, green
    eyes) the master must reproduce core's frame exactly, for every build,
-   state and tick. Anything else means a patch is drifting from the package. */
+   state and tick. Anything else means a patch is drifting from the package.
+   Every antenna, ear and chest option the package already has is in here,
+   because this file now draws all three itself: these cases are what says its
+   tables still agree with core, down to the ball's sliding markings and the
+   pixels a raised claw takes off an ear. */
 {
   let bad = 0;
-  const cases = [W(), W({ antenna: 'twin' }), W({ ears: 'fin' }), W({ ears: 'none', chest: 'core' }), TANK, BALL];
+  const T = (o) => W({ body: B(1), build: 'tank', ...o });
+  const BA = (o) => W({ body: B(2), build: 'ball', ...o });
+  const cases = [
+    W(), W({ antenna: 'twin' }), W({ antenna: 'dome' }),
+    W({ ears: 'fin' }), W({ ears: 'none', chest: 'core' }), W({ chest: 'grille' }),
+    TANK, T({ antenna: 'mast', ears: 'bolt', chest: 'lights' }), T({ ears: 'fin', chest: 'grille' }),
+    BALL, BA({ antenna: 'twin', ears: 'bolt', chest: 'lights' }), BA({ antenna: 'mast', ears: 'fin', chest: 'core' }),
+  ];
   for (const tr of cases) for (const st of ['active', 'needs', 'waiting']) for (let tick = 0; tick < 30; tick++) {
     const a = folkFrame(tr, st, tick);
     const b = robot(tr, st, tick).frame;
@@ -203,7 +336,7 @@ const FLOAT = W({ body: B(5), build: 'float', antenna: 'dome', ears: 'bolt', che
     const bs = b.grid.slice(from).map((r) => r.join('')).join('|') + ` dy=${b.dy}`;
     if (as !== bs && bad < 4) {
       bad++;
-      console.log(`MISMATCH build=${tr.build} ears=${tr.ears} state=${st} tick=${tick}`);
+      console.log(`MISMATCH build=${tr.build} antenna=${tr.antenna} ears=${tr.ears} chest=${tr.chest} state=${st} tick=${tick}`);
       a.grid.forEach((row, i) => { if (i < from) return; const o = b.grid[i].join(''); if (row.join('') !== o) console.log(`  ${String(i).padStart(2)} core ${row.join('')}\n     mine ${o}`); });
     } else if (as !== bs) bad++;
   }
@@ -235,15 +368,37 @@ const SECTIONS = [
     rows: Object.keys(EYE_COLORS).map((c) => [c, [
       ...[0, 1, 2, 3].map((i) => robot(W({ body: B(i) }), 'active', 1, { eyeColor: c })),
       robot(FLOAT, 'active', 1, { eyeColor: c }), robot(W(), 'needs', 0, { eyeColor: c })]]) },
+  { name: 'antenna', note: 'Four on top of the three the package has. <code>dome</code>, <code>horns</code> and <code>bar</code> follow the crown, so they stay seated when the head narrows; the rest stay centred, which is what leaves <code>twin</code> standing clear of a cone&rsquo;s point. <code>horns</code> is a triangle a side, tip outboard, in the body&rsquo;s shade colour; <code>bar</code> is one light the full width of the crown &mdash; floored at x&nbsp;10&ndash;21 so it stays a bar on <code>cone</code> rather than collapsing into a second <code>dome</code> &mdash; with half-height end cells, so its top corners come off and the ends curve onto the head.',
+    cols: ['walker', 'tank', 'ball', 'float', 'on cone', 'on taper', 'idle'],
+    rows: Object.keys(ANTENNAS).map((a) => [a, [
+      robot(W(), 'active', 1, { antenna: a }), robot(TANK, 'active', 1, { antenna: a }),
+      robot(BALL, 'active', 1, { antenna: a }), robot(FLOAT, 'active', 1, { antenna: a }),
+      robot(W(), 'active', 1, { antenna: a, head: 'cone' }), robot(W(), 'active', 1, { antenna: a, head: 'taper' }),
+      robot(W(), 'waiting', 0, { antenna: a })]]) },
+  { name: 'ears', note: 'Drawn inward from the head outline at each row, so an ear re-anchors instead of drifting off when the head narrows &mdash; on <code>taper</code> they step in with the jaw. <code>floating</code> keeps the column next to the head empty, so it stays detached whatever shape the head is; it is all light, rounded off with half cells, so the pair blinks with the antenna. An ear fills only an empty cell, the order core draws in: the tank&rsquo;s raised claw and the walker&rsquo;s raised hand cut into the ones they overlap.',
+    cols: ['walker', 'light off', 'tank', 'ball', 'float', 'on taper', 'needs', 'needs (tank)'],
+    rows: Object.keys(EARS).map((e) => [e, [
+      robot(W(), 'active', 1, { ears: e }), robot(W(), 'active', 4, { ears: e }),
+      robot(TANK, 'active', 1, { ears: e }), robot(BALL, 'active', 1, { ears: e }),
+      robot(FLOAT, 'active', 1, { ears: e }), robot(W(), 'active', 1, { ears: e, head: 'taper' }),
+      robot(W(), 'needs', 0, { ears: e }), robot(TANK, 'needs', 0, { ears: e })]]) },
+  { name: 'chest', note: 'Row 12, x&nbsp;12&ndash;19 on every build; on the ball it becomes a marking that slides round the waist (the two ball columns are ticks 1 and 7). <code>none</code>, <code>slot</code>, <code>screen</code> and <code>stripe</code> carry no lights, so they sit out the chase while working and the flash on <code>needs</code>.',
+    cols: ['walker', 'chase, next', 'tank', 'ball', 'ball, slid', 'float', 'needs'],
+    rows: Object.keys(CHESTS).map((c) => [c, [
+      robot(W(), 'active', 1, { chest: c }), robot(W(), 'active', 3, { chest: c }), robot(TANK, 'active', 1, { chest: c }),
+      robot(BALL, 'active', 1, { chest: c }), robot(BALL, 'active', 7, { chest: c }), robot(FLOAT, 'active', 1, { chest: c }),
+      robot(W(), 'needs', 0, { chest: c })]]) },
 ];
 
 // A gallery of combinations, to show the space rather than the axes.
 const MIX = [];
 const heads = Object.keys(HEADS), eyes = Object.keys(EYES), mouths = Object.keys(MOUTHS), cols = Object.keys(EYE_COLORS);
+const antennas = Object.keys(ANTENNAS), ears = Object.keys(EARS), chests = Object.keys(CHESTS);
 const builds = [W, () => TANK, () => BALL, () => FLOAT];
-for (let i = 0; i < 24; i++) {
-  const tr = { ...builds[i % 4](), body: B(i % 7), antenna: ['mast', 'twin', 'dome'][i % 3], ears: ['bolt', 'fin', 'none'][(i + 1) % 3], chest: ['lights', 'core', 'grille'][(i + 2) % 3], phase: i };
-  MIX.push(robot(tr, 'active', 1 + (i % 4), { head: heads[i % 4], eyes: eyes[(i + 1) % 4], mouth: mouths[(i + 2) % 4], eyeColor: cols[i % 3] }));
+for (let i = 0; i < 32; i++) {
+  const tr = { ...builds[i % 4](), body: B(i % 7), phase: i };
+  MIX.push(robot(tr, 'active', 1 + (i % 4), { head: heads[i % 4], eyes: eyes[(i + 1) % 4], mouth: mouths[(i + 2) % 4], eyeColor: cols[i % 3],
+    antenna: antennas[i % 7], ears: ears[(i + 3) % 5], chest: chests[(i + 5) % 8] }));
 }
 
 let html = `<!doctype html><meta charset="utf-8"><title>robofolks v2.0.0 — blueprint</title>
@@ -254,8 +409,8 @@ table{border-collapse:collapse}td,th{padding:5px 8px;text-align:left;vertical-al
 th{color:#a89984;font-weight:normal;font-size:12px}td:first-child{color:#fabd2f;width:74px}
 svg{display:block}.mix{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}</style>
 <h1>robofolks v2.0.0 &mdash; blueprint</h1>
-<p class="note">Every variation approved for v2, drawn by patching real frames from <code>src/core.js</code>; the package itself is untouched. Decisions and open work are in <code>blueprint/v2/plan.md</code>.
-build 4 &times; body 7 &times; antenna 8 &times; ears 6 &times; chest 8 &times; head 4 &times; eyes 4 &times; mouth 4 &times; eye colour 3 = <b>2,064,384</b> robots.</p>`;
+<p class="note">All nine axes approved for v2, drawn by patching real frames from <code>src/core.js</code>; the package itself is untouched. Decisions and open work are in <code>blueprint/v2/plan.md</code>.
+build 4 &times; body 7 &times; antenna 7 &times; ears 5 &times; chest 8 &times; head 4 &times; eyes 4 &times; mouth 4 &times; eye colour 3 = <b>1,505,280</b> robots.</p>`;
 for (const s of SECTIONS) {
   html += `<h2>${s.name}</h2><p class="note">${s.note}</p><table><tr><th></th>${s.cols.map((c) => `<th>${c}</th>`).join('')}</tr>`;
   for (const [n, cells] of s.rows) html += `<tr><td>${n}</td>${cells.map((c) => `<td>${svgOf(c)}</td>`).join('')}</tr>`;
