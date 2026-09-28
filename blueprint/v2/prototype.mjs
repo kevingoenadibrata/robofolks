@@ -95,7 +95,7 @@ const paintEars = (g, spans, name) => {
 };
 
 /* ---------------- chest panel (row 12, x 12-19) ---------------- */
-// One table for all eight options, used by every build: the walker's and
+// One table for all seven options, used by every build: the walker's and
 // tank's panel, the float pod's last row, and -- as a marking that slides
 // round the waist -- the ball's. The three the package already has go
 // through it too, so the fidelity check pins the whole table down.
@@ -104,25 +104,29 @@ const CHESTS = {
   core: (g) => { for (let x = 14; x <= 17; x++) g[12][x] = 'v'; g[12][15] = '2'; g[12][16] = '2'; },
   grille: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = x % 2 ? 'd' : 'v'; },
   none: () => {},
-  two: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = 'v'; g[12][13] = '1'; g[12][18] = '3'; },
-  slot: (g) => { for (let x = 13; x <= 18; x++) g[12][x] = 'v'; g[12][12] = 'd'; g[12][19] = 'd'; },
-  screen: (g) => { for (let x = 13; x <= 18; x++) g[12][x] = 'v'; g[12][13] = 'g'; },
-  stripe: (g) => { for (let x = 12; x <= 19; x++) g[12][x] = 'h'; },
+  // edge to edge, over the outline too, so it wraps round the body like the ball's ring
+  stripe: (g, [x0, x1]) => { for (let x = x0; x <= x1; x++) g[12][x] = 'h'; },
+  // stripe's full width, but a dark waveform: half-height shade cells, two a side
+  zigzag: (g, [x0, x1]) => { for (let x = x0; x <= x1; x++) g[12][x] = Math.floor(x / 2) % 2 ? 'Q' : 'P'; },
+  // a V-neck over rows 11-12: shade lapels closing a column every half row,
+  // a highlight shirt front between them, and the body as the jacket
+  tuxedo: (g) => { TUX.forEach((cells, i) => [...cells].forEach((c, dx) => { g[11 + i][12 + dx] = c; })); },
 };
-// x 12-19 is interior body on every build (walker 9-22, tank 7-24, pod 11-20),
-// so the panel is repainted by clearing back to the base colour.
-const paintFrontChest = (g, chest) => { for (let x = 12; x <= 19; x++) g[12][x] = '#'; CHESTS[chest](g); };
+// x 12-19 is interior body on every build, so the panel is repainted by
+// clearing back to the base colour. `span` is the body's row 12, outline
+// included, for the one option that runs the full width.
+const SPAN = { walker: [9, 22], tank: [7, 24], float: [11, 20] };
+const TUX = ['PRhhhhRP', '##PRRP##'];
+const paintFrontChest = (g, chest, span) => { for (let x = 12; x <= 19; x++) g[12][x] = '#'; CHESTS[chest](g, span); };
 
 // The ball's waist. Rows 11-13 are repainted to bare sphere -- span, then the
 // four shaded cells sphere() puts there -- and the marking stamped back on.
 const WAIST = { 11: [5, 26], 12: [6, 25], 13: [7, 24] };
 const MARKING = {
-  lights: ['d1d2d3d'], core: ['ddddd', 'd222d', 'ddddd'], grille: null, none: null, stripe: null,
-  two: ['d1ddd3d'], slot: ['dddddd'], screen: ['ddddd', 'dvvvd', 'ddddd'],
+  lights: ['d1d2d3d'], core: ['ddddd', 'd222d', 'ddddd'], grille: null, none: null, stripe: null, zigzag: null, tuxedo: null,
 };
 const mod = (a, m) => ((a % m) + m) % m;
-const stamp = (g, rows, cx) => {
-  const top = Math.round(12 - (rows.length - 1) / 2);
+const stamp = (g, rows, cx, top = Math.round(12 - (rows.length - 1) / 2)) => {
   rows.forEach((cells, i) => {
     const left = Math.round(cx - (cells.length - 1) / 2);
     [...cells].forEach((c, dx) => {
@@ -135,7 +139,12 @@ const ballChest = (g, chest, n) => {
   for (const [y, [x0, x1]] of Object.entries(WAIST)) for (let x = x0; x <= x1; x++) g[y][x] = '#';
   g[11][5] = 'h'; g[11][26] = 'd'; g[12][25] = 'd'; g[13][23] = 'd'; g[13][24] = 'd';
   if (chest === 'stripe') { const [x0, x1] = WAIST[12]; for (let x = x0; x <= x1; x++) g[12][x] = 'h'; return; }
+  // a ring like stripe's; the wave travels a column a tick
+  if (chest === 'zigzag') { const [x0, x1] = WAIST[12]; for (let x = x0; x <= x1; x++) g[12][x] = mod(Math.floor((x - n) / 2), 2) ? 'Q' : 'P'; return; }
   if (chest === 'grille') { const [x0, x1] = WAIST[12]; for (let x = x0 + 1; x < x1; x++) if (mod(x - n, 4) === 0) g[12][x] = 'd'; return; }
+  // The tuxedo is a shirt front, not a marking: it stays centred, as it is on
+  // every other build, and hangs from row 11 rather than centring on 12.
+  if (chest === 'tuxedo') { stamp(g, TUX, 15.5, 11); return; }
   if (!MARKING[chest]) return;
   // Panels and light strips slide a column a tick and repeat every 12, so the
   // pattern comes back round in step with the grille's.
@@ -212,6 +221,10 @@ const drawEyes = (g, shape, state, look = 0, spans = BOX) => {
 const HALVES = {
   T: ['m', 0], U: ['m', 1], // mouth: top half, bottom half
   A: ['a', 1], B: ['a', 0], // the light: bottom half, top half
+  // On the body a half can't leave the other half empty -- it would punch a
+  // hole in the torso -- so these fill it with the body colour.
+  P: ['d', 0, '#'], Q: ['d', 1, '#'], // zigzag chest: shade top, shade bottom
+  R: ['h', 0, 'd'], // tuxedo: shirt above the lapel line
 };
 
 /* ---------------- mouth (half-height pixels T/U) ---------------- */
@@ -246,7 +259,7 @@ const floatBody = (g, o, state, t) => {
     for (let x = x0 + 1; x <= x1; x++) g[y][x] = '#';
     g[y][x1] = 'd';
   }
-  paintFrontChest(g, o.chest); // the pod's last row is the chest panel, unchanged
+  paintFrontChest(g, o.chest, SPAN.float); // the pod's last row is the chest panel, unchanged
   for (let x = 13; x <= 18; x++) g[13][x] = 'd'; // skirt: bottom of the body
   // plume: wide at the skirt, narrowing to a point
   const n = Math.floor(t / 2), on = state !== 'waiting' || t % 4 < 2;
@@ -276,7 +289,7 @@ function robot(traits, state = 'active', tick = 1, opts = {}) {
   let poses = null;
   if (traits.build === 'float') ({ dy: frame.dy, poses } = floatBody(g, o, state, t));
   else if (base.build === 'ball') ballChest(g, o.chest, state === 'active' ? t : 0);
-  else paintFrontChest(g, o.chest);
+  else paintFrontChest(g, o.chest, SPAN[base.build]);
   paintHead(g, HEADS[o.head], o, base.build);
   if (poses) { arm(g, -1, poses[0]); arm(g, 1, poses[1]); }
   const look = state === 'active' ? [0, 0, 1, 0, 0, -1][Math.floor(t / 6) % 6] : 0;
@@ -293,7 +306,9 @@ const eachRect = (frame, colors, fn) => {
   eachFolkRect({ ...frame, grid: frame.grid.map((r) => r.map((c) => (HALVES[c] ? '.' : c))) }, colors, fn);
   frame.grid.forEach((r, y) => r.forEach((c, x) => {
     const half = HALVES[c];
-    if (half) fn(x, y * 2 + frame.dy + half[1], 1, 1, colors[half[0]]);
+    if (!half) return;
+    fn(x, y * 2 + frame.dy + half[1], 1, 1, colors[half[0]]);
+    if (half[2]) fn(x, y * 2 + frame.dy + 1 - half[1], 1, 1, colors[half[2]]);
   }));
 };
 const svgOf = ({ frame, colors }) => {
@@ -382,7 +397,7 @@ const SECTIONS = [
       robot(TANK, 'active', 1, { ears: e }), robot(BALL, 'active', 1, { ears: e }),
       robot(FLOAT, 'active', 1, { ears: e }), robot(W(), 'active', 1, { ears: e, head: 'taper' }),
       robot(W(), 'needs', 0, { ears: e }), robot(TANK, 'needs', 0, { ears: e })]]) },
-  { name: 'chest', note: 'Row 12, x&nbsp;12&ndash;19 on every build; on the ball it becomes a marking that slides round the waist (the two ball columns are ticks 1 and 7). <code>none</code>, <code>slot</code>, <code>screen</code> and <code>stripe</code> carry no lights, so they sit out the chase while working and the flash on <code>needs</code>.',
+  { name: 'chest', note: 'Row 12, x&nbsp;12&ndash;19 on every build; on the ball it becomes a marking that slides round the waist (the two ball columns are ticks 1 and 7). <code>stripe</code> runs the full width of the body, outline included, so it wraps round like the ball&rsquo;s ring. <code>zigzag</code> takes the same span as a dark square wave in half-height cells. <code>tuxedo</code> is a V-neck over rows 11&ndash;12, and the one marking that stays centred on the ball. <code>none</code>, <code>stripe</code>, <code>zigzag</code> and <code>tuxedo</code> carry no lights, so they sit out the chase while working and the flash on <code>needs</code>.',
     cols: ['walker', 'chase, next', 'tank', 'ball', 'ball, slid', 'float', 'needs'],
     rows: Object.keys(CHESTS).map((c) => [c, [
       robot(W(), 'active', 1, { chest: c }), robot(W(), 'active', 3, { chest: c }), robot(TANK, 'active', 1, { chest: c }),
@@ -398,7 +413,7 @@ const builds = [W, () => TANK, () => BALL, () => FLOAT];
 for (let i = 0; i < 32; i++) {
   const tr = { ...builds[i % 4](), body: B(i % 7), phase: i };
   MIX.push(robot(tr, 'active', 1 + (i % 4), { head: heads[i % 4], eyes: eyes[(i + 1) % 4], mouth: mouths[(i + 2) % 4], eyeColor: cols[i % 3],
-    antenna: antennas[i % 7], ears: ears[(i + 3) % 5], chest: chests[(i + 5) % 8] }));
+    antenna: antennas[i % 7], ears: ears[(i + 3) % 5], chest: chests[(i + 5) % chests.length] }));
 }
 
 let html = `<!doctype html><meta charset="utf-8"><title>robofolks v2.0.0 — blueprint</title>
@@ -410,7 +425,7 @@ th{color:#a89984;font-weight:normal;font-size:12px}td:first-child{color:#fabd2f;
 svg{display:block}.mix{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}</style>
 <h1>robofolks v2.0.0 &mdash; blueprint</h1>
 <p class="note">All nine axes approved for v2, drawn by patching real frames from <code>src/core.js</code>; the package itself is untouched. Decisions and open work are in <code>blueprint/v2/plan.md</code>.
-build 4 &times; body 7 &times; antenna 7 &times; ears 5 &times; chest 8 &times; head 4 &times; eyes 4 &times; mouth 4 &times; eye colour 3 = <b>1,505,280</b> robots.</p>`;
+build 4 &times; body 7 &times; antenna 7 &times; ears 5 &times; chest 7 &times; head 4 &times; eyes 4 &times; mouth 4 &times; eye colour 3 = <b>1,317,120</b> robots.</p>`;
 for (const s of SECTIONS) {
   html += `<h2>${s.name}</h2><p class="note">${s.note}</p><table><tr><th></th>${s.cols.map((c) => `<th>${c}</th>`).join('')}</tr>`;
   for (const [n, cells] of s.rows) html += `<tr><td>${n}</td>${cells.map((c) => `<td>${svgOf(c)}</td>`).join('')}</tr>`;

@@ -59,7 +59,7 @@ Prototyped and dropped:
 | `plug` | A T on its side: a stem at rows 5–6 x 5–6 `#`, and a flange standing on its end at rows 4–7 x 4 `d`. |
 | `floating` | A half-circle that doesn't touch, and all of it the light `a`: the flat side at rows 4–7 x 5, the curve at x 4 — rows 5–6 full, plus row 4's bottom half and row 7's top half — and x 6, the column against the head, deliberately left empty. |
 
-Prototyped; both kept. Three things the drawing settled:
+Prototyped; all four kept. Three things the drawing settled:
 
 - Ears are placed *k* columns outboard of the head outline at their row, not
   at fixed columns, so they step in with `taper`'s jaw instead of drifting
@@ -91,25 +91,62 @@ Prototyped and dropped:
 | Option | Front | Ball marking |
 | --- | --- | --- |
 | `none` | Plain panel. | Bare sphere. |
-| `two` | `v1vvvv3v`. | Same stamp as `lights` with the middle light dropped. |
-| `slot` | Disk-drive slit: `dvvvvvvd`. | A dark band `dddddd`. |
-| `screen` | A second little display: x 13–18 `v`, `g` glare at x 13. | Same stamp as `core` but `v` inside. |
-| `stripe` | A highlight band: x 12–19 `h`. | A full `h` ring round the waist (slides nicely). |
+| `stripe` | A highlight band the full width of the body, outline included: x 9–22 on a walker, 7–24 on a tank, 11–20 on `float`. | A full `h` ring round the waist (slides nicely). |
+| `zigzag` | `stripe`'s span, as a square wave in the shade `d`: half-height cells, two on the top half then two on the bottom (`PPQQ…`). | A ring whose wave slides a column a tick. |
+| `tuxedo` | A V-neck over rows 11–12: `d` lapels from x 12 and 19, a column inward every half row, meeting at x 15–16 on row 12's bottom half, with an `h` shirt front between them and the body as the jacket. | The same V, centred and still. |
 
-Prototyped; all five kept. The panel is the same row on every build, so each
+Prototyped; all four kept. The panel is the same row on every build, so each
 option needed no per-build case — the ball is the only one that needs its own
 form, and `stripe` is a ring there rather than a stamp because a uniform band
-has nothing to slide.
+has nothing to slide. `stripe` is the one panel not held to x 12–19: it runs
+edge to edge, over the outline, so it wraps round the body the way it does
+round the ball, and needs the build's row-12 span. It is also the only panel
+lighter than the body; every other one is darker, which is what keeps it
+apart at a glance.
+
+`zigzag` shares `stripe`'s span but is dark, so the two don't compete. Its
+cells are half-height like the mouths', but the other half can't be left
+empty on the body — it would punch a hole in the torso — so its two chars
+(`P` shade on top, `Q` shade below) fill the other half with the body
+colour, and the half-height table grows an optional second colour. A wave
+that flips every column was drawn first: at 32px it read as a checkerboard,
+so the wave flips every two. It is drawn in the shade rather than the
+highlight on review; lighter, it read as a textured `stripe`. It echoes the
+`zigzag` mouth, so a robot with both wears two waves.
+
+`tuxedo` is the only panel with height or a diagonal, so nothing else is near
+it. It is the one option that reaches row 11 — interior body on every build,
+and right under the walker's neck, which then reads as a collar. On the ball
+it is the one marking that doesn't slide: sliding, it spent frames as two
+half-Vs at the edges, and a shirt front has to face you. It needs one more
+two-colour half cell, `R` (highlight above, shade below), where the shirt
+meets a lapel.
 
 The one cost is the chest lights, which carry the working chase and the
-`needs` flash. `none`, `slot`, `screen` and `stripe` have none, so those
-robots sit both out, and `two` goes dark on the middle beat of the three-step
-chase. The `needs` state still has yellow eyes and the `!`, so nothing is
-lost there. Working is the case to watch: paired with `mouth: none`, which
-talks with the chest lights only, the robot has no talking cue at all. Five
-of the eight panels have no lights — `grille` already doesn't today — so that
-is 5 in 32 of the space. If it should never happen, the cheapest fix is for
-`mouth` to fall back to `line` when the chest has no lights.
+`needs` flash. `none`, `stripe`, `zigzag` and `tuxedo` have none, so those
+robots sit both out.
+The `needs` state still has yellow eyes and the `!`, so nothing is lost
+there. Working is the case to watch: paired with `mouth: none`, which talks
+with the chest lights only, the robot has no talking cue at all. Five of the
+seven panels have no lights — `grille` already doesn't today — so that is 5
+in 28 of the space. If it should never happen, the cheapest fix is for `mouth`
+to fall back to `line` when the chest has no lights.
+
+Prototyped and dropped. A panel is one row of eight cells, which has room
+for lights, a texture, a bare body or a light band — and these three were all
+a dark bar differing only at the ends:
+
+- **`two`** — `v1vvvv3v`: `lights` with the middle light dropped. It read as
+  `lights`, and went dark on the middle beat of the chase.
+- **`slot`** — a disk-drive slit, `dvvvvvvd`. The `d` caps barely separate
+  from `v` at this size, so it read as a plain dark bar.
+- **`screen`** — a second little display, x 13–18 `v` with `g` glare at
+  x 13. One glare pixel was all that told it from `slot`, or from `lights`
+  whenever its lights were off.
+
+If the chest needs more range than this, the way to get it is a taller panel
+rather than more patterns in row 12; that hasn't been checked against every
+build's torso.
 ## 2. New variations
 
 ### Eyes — do this one first
@@ -261,9 +298,11 @@ Mouth and eyes share a colour, so anything on row 6 reads as attached to the
 eyes. All shapes therefore stay on row 7 and use **half-height pixels**: two
 new grid chars, `T` (top half of the cell) and `U` (bottom half), drawn by
 `eachFolkRect` the same way the shut eyelid `l` already is. The `bar` antenna
-and the `floating` ear add the light's two halves, so the case is one table of
-char → colour and half — four chars — rather than one hard-wired case per
-part.
+and the `floating` ear add the light's two halves, and the `zigzag` and
+`tuxedo` chests three more that fill their other half with a second colour,
+so the case is one table of char → colour, half and an optional second
+colour — seven chars —
+rather than one hard-wired case per part.
 
 - `line` — today: x 14–17, narrowing to 15–16 while talking.
 - `zigzag` — x 12–19 alternating `T`/`U`; talking flips the parity so the
@@ -295,20 +334,20 @@ part.
 | build | 4 | new: `float` |
 | antenna | 7 | 3 + `none`, `bulb`, `horns`, `bar` (`dome` reworked) |
 | ears | 5 | 3 + `plug`, `floating` |
-| chest | 8 | 3 + `none`, `two`, `slot`, `screen`, `stripe` |
+| chest | 7 | 3 + `none`, `stripe`, `zigzag`, `tuxedo` |
 | eyes | 4 | new |
 | eyeColor | 3 | new |
 | head | 4 | new |
 | mouth | 4 | new |
-| **Total** | **1,505,280** | |
+| **Total** | **1,317,120** | |
 
-That's about **2,650×** today's count.
+That's about **2,320×** today's count.
 
 Each section on its own, on top of today's 567:
 
 | Only doing… | Total |
 | --- | ---: |
-| Section 1 (expanded lists) | 7 × 3 × 7 × 5 × 8 = 5,880 |
+| Section 1 (expanded lists) | 7 × 3 × 7 × 5 × 7 = 5,145 |
 | The `float` build alone | 567 × 4 / 3 = 756 |
 | Section 2 (new parts) | 567 × 4 × 3 × 4 × 4 = 108,864 |
 
@@ -334,6 +373,7 @@ a **new** draw at the end of `seededTraits` and only override when it lands
    and drift cycle, so it is the largest single piece of work here.
 2. Eye colour — a few lines in `folkColors`.
 3. Mouth.
-4. Chest `none`/`stripe`/`slot`, antenna `none`/`bulb`/`bar` — the easy list
+4. Chest `none`/`stripe`, antenna `none`/`bulb`/`bar` — the easy list
    additions.
-5. Antenna `horns`, ears `plug`/`floating`, chest `two`/`screen`.
+5. Antenna `horns`, ears `plug`/`floating`, chests `zigzag` and
+   `tuxedo` (both need the two-colour half cells).

@@ -56,9 +56,9 @@ rows 0–1 are excluded for that one case.
 | eye colour | green, aqua, sand | new axis |
 | antenna | +none, bulb, horns, bar | four kept; `dish` and `propeller` dropped |
 | ears | +plug, floating | two kept; `cup` and `ring` dropped |
-| chest | +none, two, slot, screen, stripe | all five kept |
+| chest | +none, stripe, zigzag, tuxedo | four kept; `two`, `slot` and `screen` dropped |
 
-Total if all of it lands: **1,505,280** robots, against 567 today.
+Total if all of it lands: **1,317,120** robots, against 567 today.
 
 ## How the prototype works
 
@@ -75,16 +75,18 @@ they are what an implementation in `src/core.js` would need to reproduce:
   cell) and `U` (bottom half), the same trick `eachFolkRect` already uses for
   the shut eyelid `l`. This keeps every mouth on row 7, clear of the eyes,
   which share the mouth's colour. The `bar` antenna and the `floating` ear use
-  the light's two halves to round themselves off, so the new case in
-  `eachFolkRect` is one table of char → colour and half — and every output
-  path (SVG, animated SVG, PNG, sprite sheet) then gets all four for free.
+  the light's two halves to round themselves off, and the `zigzag` and
+  `tuxedo` chests add three that fill their other half with a second colour,
+  so the new case in `eachFolkRect` is one table of char → colour, half and
+  an optional second colour — and every output path (SVG, animated SVG, PNG,
+  sprite sheet) then gets all seven for free.
 - **The ball needs help.** A narrower head exposes sphere that `sphere()` only
   fills where cells are empty, and the seam under the head (row 10) has to
   follow the head's bottom span. `ballSlide` already takes a `seam` argument.
 - **Antenna, ears and chest are drawn here, from one table each.** Core is
   asked for a robot with no antenna and no ears and its chest panel is
   repainted, so the three options the package already has go through the same
-  table as the eleven new ones — which is what the fidelity check pins down.
+  table as the ten new ones — which is what the fidelity check pins down.
   Ears are placed *k* columns outboard of the head outline at their row, so
   they re-anchor on a narrower head, and they fill only empty cells: core
   draws the ears before the arms, so a raised claw or hand covers the ear it
