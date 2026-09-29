@@ -311,6 +311,183 @@ rather than one hard-wired case per part.
   into a smile; talking shrinks it to x 15–16 with `T` at 14 and 17.
 - `none` — talks with the chest lights only.
 
+## 3. New states — proposed, not yet reviewed
+
+Core has three: `active` (working), `needs` (alert) and `waiting` (idle).
+Five more are prototyped, drawn over core's `waiting` frame by
+`moodRobot` in `prototype.mjs`; the top of `prototype.html` plays all seven
+on every build. The same two rules hold — each must read on every build
+(so each says what the armless ball does), and with every eye shape — plus
+a third: **each is told apart by more than colour**, so it survives
+colour-blindness and the Dark gray body.
+
+| State | Face | Body | Lights and glyphs |
+| --- | --- | --- | --- |
+| `angry` | Red eyes with the inner top corner cut, stepped by a half cell: brows down. The visor bends into a V. A frown on row 7. | Trembles a column side to side for 4 ticks in 8. Walker shakes a fist overhead and stomps; tank raises one claw, both snap, tread revs in place; ball rocks; float shakes a fist, plume flared wide. | Antenna and chest flash red every tick. A red anger mark top right, steam puffs off both sides of the crown. |
+| `confused` | Eyes darting side to side, a column either way every 2 ticks, with a double blink every 24. The visor's bar darts with them. A squiggle mouth. | Walker scratches its head (hand alternating `up-in`/`up-out` beside the ear); tank the same with a claw; ball rolls three columns one way, then back; float raises a hand. | Purple `?` bobbing top right. Antenna blinks out of rhythm, chest lights light out of order. |
+| `thinking` | Eyes rolled up (half a cell off the bottom), looking to one side, glancing back every 32 ticks. The visor runs a scanner. A small pursed mouth off-centre. | Still. Walker's hand to its chin; tank a claw raised; ball's markings creep a column every 3 ticks; float's hand to its chin, a slow bob. | A typing indicator: three dots appear in turn, then a beat empty. Slow aqua chest chase and antenna pulse. |
+| `surprised` | Ring eyes — `needs`' 3×3 with the centre left dark, an O — in the robot's own eye colour. Dot eyes stretch to three rows; the visor becomes one wide ring. A small o mouth. | Jumps (2 ticks up), arms thrown up for 6 ticks, then freezes with hands out for the rest of the 24. Tank: claws up, then held open low; ball jumps; float jumps, arms up then out. | Shock lines off both top corners during the startle, chest lights and antenna flash cream on the jump, then dark. |
+| `destroyed` | X eyes in grey that flicker (dark for a tick, red on the twitch). The visor breaks into pieces, one dropped a row. No mouth. A crack down the screen from a dent in the shell. | Slumped half a row, twitching every 20 ticks. The head is knocked a column off the body and the antenna bent further. One arm lies on the ground; the float is grounded and its plume coughs every 9 ticks. Highlights go, like scorching. | Lights dead. Smoke puffs off the crack, sparks at the head and the socket now and then. |
+
+What the states need that core doesn't have yet:
+
+- **`dx`** on a frame, for `angry`'s shake. Every renderer takes `dy`
+  already; `dx` is the same offset sideways, and in the animated SVG the
+  same translate.
+- **Glyphs**: `?`, the anger mark, a dot, two puff sizes, a spark and two
+  shock lines join
+  `!`, `z` and `Z`. Glyphs already carry colour and opacity.
+- **Eye half cells** `E` (low), `F` (high) and `W` (a glint, high): the
+  half-cell table again, with the visor as the other half. The mouth's `T`
+  and `U` now fill their other half with the visor too; they left it empty,
+  which only didn't show because the page background is nearly the visor's.
+- **Per-state colours** for the eyes, chest lights and antenna, where
+  `folkColors` switches on `needs` today; and a crack colour `c`.
+- **Two arm poses** per build, `chin` and `gone`, and the walker's fist
+  (`up-in`/`up-out` alternating every tick on one side).
+- **Periods.** Each loops in 24 ticks or divides into it, except
+  `destroyed`'s sparks (7, 11) and twitch (20). The animated SVG compiles
+  one loop to CSS keyframes, so those want rounding to divisors of 24
+  before it's built, or the file grows to the LCM.
+- **Reduced motion**: each needs one still that reads on its own. The
+  stills in the `states` section of the prototype are the candidates.
+- **The element's label** (`STATE_LABELS`) and the `.d.ts` `FolkState`.
+
+New states don't move any seed's robot, so unlike everything above they are
+a minor version on their own — they only ride on v2 because the face is
+drawn from the new eye table.
+
+`confused`'s eyes were drawn five ways; `dart` was kept. Dropped:
+
+- **`squint`** — one eye wide (its `needs` form), the other half-shut,
+  swapping every 12 ticks; the visor tilted. The first draft; didn't land on
+  review.
+- **`uneven`** — both open, one half a cell lower. The visor tilted.
+- **`cross`** — eyes drifting to the nose and apart every 6 ticks.
+- **`wavy`** — squiggle eyes in half cells, flipping every 3 ticks; with the
+  squiggle mouth, the whole face was one texture.
+
+`dart`'s still frame is just open eyes looking aside, so under reduced
+motion `confused` reads by the `?` and the head-scratching arm.
+
+Choices worth a second look on review:
+
+- `surprised` sits closest to `needs` of anything here: both jump or throw
+  their arms up. What separates them is the eyes (a ring in the trait
+  colour against a solid yellow block), the missing `!`, and that
+  `surprised` freezes after its start while `needs` keeps waving. If that
+  isn't enough on a busy dashboard, the next lever is to make its jump a
+  one-shot that settles into a still stare, rather than a 24-tick loop.
+
+- `angry` and `destroyed` both override the trait eye colour, the way
+  `needs` does; `confused` and `thinking` keep it. `angry`'s red is the
+  colour rejected as an eye colour trait for reading as error — here that's
+  the point.
+- The states draw their own mouth whatever the `mouth` trait is, including
+  `none`. The alternative is to keep `none` mouthless, which loses
+  `angry`'s frown.
+- `destroyed`'s head shift moves rows 0–9 on the ball too, which includes
+  the sphere's rim beside the head. It reads as the head knocked loose; if
+  it reads as a smeared ball, shift the head spans only.
+
+### Celebrate and the hop
+
+Two more, from how robofolks gets used: a todo marked done has no reward
+(the robot just goes away), and the attention hops start from standing, with
+no wind-up.
+
+**The hop** is one primitive, 8 ticks: rest, **crouch**, **take-off**, air,
+apex, falling, **squashed landing**, rest. The crouch and the landing squash
+the robot a row — everything above the feet drops onto them (on the ball,
+everything above its lower half), so the walker's legs vanish into a squat,
+the tank sinks into its tread and the ball's head sinks into the sphere.
+Take-off and falling sit either side of the apex at 3 and 4 units up, the
+apex at 7. Arms take a generic pose — down, back, up, out — that each build
+maps to its own: the walker swings its arms back in the crouch and throws
+them up on take-off, the tank raises its claws, the float flares its plume
+on take-off and cuts it in the squash.
+
+- **Alert (`needs`) is reworked to use it.** The same yellow eyes, `!` and
+  flashing lights, but every build hops with a wind-up every 12 ticks, arms
+  waving in the 4 ticks between, where today the walker, tank and float wave
+  in place and only the ball bounces (with no wind-up). This changes how an
+  existing state looks, so it rides on the major version. It was first
+  prototyped as a separate `alert, hopping` state beside the old one; on
+  review it replaced it. The prototype's fidelity check now holds only
+  `active` and `waiting` to core.
+
+**`celebrate`** loops every 12 ticks: a hop with a burst of confetti at
+take-off (ticks 0–7), then a cheer — arms alternating overhead, claws
+snapping, the float's hands up (ticks 8–11). The previous burst is still
+falling as the next goes up. It keeps hopping for as long as the host shows
+it; the host decides when the robot goes. A first draft played once and
+launched the robot off the top of the frame; cut on review in favour of just
+hopping.
+
+- **Face:** `^ ^` eyes, each a ^ of half cells (the middle half a cell higher
+  than its sides), in the trait eye colour; the visor bows into one arch.
+  Every two-eye shape shares it. The `grin` mouth.
+- **Confetti:** twelve single-pixel glyphs per burst in six palette colours,
+  thrown mostly outward from above the crown — the frame ends five rows above
+  the antenna, so there isn't room to throw them high — falling under
+  gravity, each flipping between a tall and a wide pixel as it tumbles.
+  Hidden for the first two ticks so a burst doesn't clump on the antenna,
+  faded out by 12.
+- **Lights:** a fast green chase and a blinking antenna.
+
+What these add to the implementation list above:
+
+- **Squash**: a whole-frame row shift above a per-build line, like `dx` but
+  vertical and partial.
+- **Clipping**: confetti reaches the edges of the frame, so the canvas and
+  PNG renderers should clip to the cell, as the prototype's contact sheet
+  now does. The SVG clips on its own.
+- **Confetti glyphs** `bit` and `bitw`, placed by a formula per tick rather
+  than a fixed table.
+
+### More states to consider
+
+Not drawn yet. Grouped by what a dashboard would use them for, since that's
+what the package is for.
+
+**Outcomes of a task**
+
+- `failed` / `sad` — eyes drooping at the outer corners (`angry` mirrored),
+  a tear glyph running down the screen, antenna drooped, arms hanging. A
+  gentler error than `angry`.
+- `proud` — eyes closed in arcs, chest out (torso up a row), a star glyph.
+
+**Waiting on something that isn't you**
+
+- `loading` / `booting` — screen fills in scanlines top to bottom, eyes
+  flicker on, lights test in sequence. Could be a one-shot intro.
+- `queued` — taps a foot, eyes flick to the side and back, a small clock
+  glyph.
+- `rate-limited` / `throttled` — an hourglass glyph, the chase slowed right
+  down, sluggish half-speed walk.
+- `syncing` — up/down arrow glyphs trading places, the antenna pulsing.
+- `offline` — static noise on the screen, a disconnected-plug glyph.
+- `low-battery` — chest panel drains column by column, then a red blink.
+
+**Talking to you**
+
+- `listening` — ears and antenna glow and pulse in time, eyes wide and
+  steady, head tilt (rows 2–9 up a half row on one side?).
+- `speaking` — `working`'s mouth without the walk.
+- `greeting` — one arm waves; the ball spins its markings a full turn.
+- `love` — heart eyes, a heart glyph floating up.
+- `shy` / `blushing` — pink cheek cells on the visor corners, eyes down.
+
+**Just character**
+
+- `dizzy` — spiral eyes, stars orbiting the head, a lean left and right.
+- `scared` / `nervous` — tiny dot eyes, a sweat-drop glyph, trembling
+  faster and smaller than `angry`.
+- `sleeping` — `waiting` today; a deeper version with the screen off.
+- `dancing` — the walk cycle out of phase with a bounce; the ball spins.
+- `glitching` — rows of the grid shifted a column at random for a tick,
+  colours swapped. Could be `destroyed`'s milder cousin.
+
 ## Combinations
 
 `phase` is excluded — it offsets the animation, it doesn't change the look.

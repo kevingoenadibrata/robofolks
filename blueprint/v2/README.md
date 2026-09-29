@@ -26,24 +26,27 @@ npm run blueprint      # regenerates prototype.html and prototype.png
 It prints a fidelity check first:
 
 ```
-fidelity: defaults match core exactly (dome antenna rework aside)
+fidelity: defaults match core exactly (the dome antenna and the alert hop are reworked)
 ```
 
 That check renders the prototype with every default (`box` head, `wide` eyes,
 `line` mouth, `green` eyes) and compares it against `folkFrame` from the real
-package — 12 trait sets × 3 states × 30 ticks, grid and `dy`. The sets cover
+package — 12 trait sets × 2 states (`active`, `waiting`) × 30 ticks, grid
+and `dy`. The sets cover
 every antenna, ear and chest option the package already has, on every build,
 because the prototype now draws all three itself (see below): they are what
-says its tables still agree with core, down to the ball's sliding markings and
-the pixels a raised claw takes off an ear. If it reports mismatching frames, a
+says its tables still agree with core, down to the ball's sliding markings. If it reports mismatching frames, a
 patch in `prototype.mjs` has drifted from the package.
 **Fix the patch, not the check.** It caught three real bugs during design
 (eyes dropped where they overlapped the head's glare pixels, the look-around
 offset mirrored the wrong way so the eyes crossed, and the head repaint wiping
 arms raised into rows 7–8).
 
-The only intentional difference is the reworked `dome` antenna, which is why
-rows 0–1 are excluded for that one case.
+The intentional differences are the reworked `dome` antenna, which is why
+rows 0–1 are excluded for that one case, and the reworked alert (`needs`),
+which hops now and so isn't compared at all. That drops the check's only
+frames with raised arms: the pixels a raised claw takes off an ear are now
+drawn by the hop's own code, and checked by eye in the ears section.
 
 ## What's approved
 
@@ -59,6 +62,11 @@ rows 0–1 are excluded for that one case.
 | chest | +none, stripe, zigzag, tuxedo | four kept; `two`, `slot` and `screen` dropped |
 
 Total if all of it lands: **1,317,120** robots, against 567 today.
+
+Proposed and not yet reviewed: five new **states** beside working, alert and
+idle — `angry`, `confused`, `thinking`, `surprised` and `destroyed` — plus a
+hopping `celebrate` — and alert reworked to hop with a wind-up, playing at
+the top of `prototype.html`, with a list of more candidates in `plan.md` section 3.
 
 ## How the prototype works
 
